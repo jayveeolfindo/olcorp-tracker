@@ -12,8 +12,8 @@ const CSS = `
 --mono:ui-monospace,"SF Mono","IBM Plex Mono",Menlo,monospace;--sans:-apple-system,system-ui,"SF Pro Display","Helvetica Neue",Arial,sans-serif}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
 .wrap{max-width:1040px;margin:0 auto;padding:0 22px 60px}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 0}
-.brandlogo{height:30px;width:auto;display:block;background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:6px 12px;box-shadow:var(--shadow)}
+.topbar{display:flex;flex-direction:column;align-items:center;gap:12px;padding:20px 0}
+.brandlogo{height:60px;width:auto;display:block;background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:10px 18px;box-shadow:var(--shadow)}
 .div{color:var(--faint);font-size:13px}
 .mlabel{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:1.2px;color:var(--green);text-transform:uppercase}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
@@ -98,7 +98,7 @@ function page(title, body) {
   return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${esc(title)}</title><style>${CSS}</style></head>
 <body><div class="wrap">
-<div class="topbar"><span style="display:inline-flex;align-items:center;gap:10px"><img class="brandlogo" src="/logo.png" alt="olcorp.ca, Olfindo Immigration Consulting Corp"><span class="div">Client Application Tracker</span></span></div>
+<div class="topbar"><span style="display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center"><img class="brandlogo" src="/logo.png" alt="olcorp.ca, Olfindo Immigration Consulting Corp"><span class="div">Client Application Tracker</span></span></div>
 ${body}
 </div></body></html>`;
 }
