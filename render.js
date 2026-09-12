@@ -99,8 +99,23 @@ code{font-family:var(--mono);font-size:11px;background:var(--slate-soft);padding
 `;
 
 function page(title, body) {
+  const BASE = (process.env.BASE_URL || 'https://tracker.olcorp.ca').replace(/\/+$/, '');
+  const OG_IMG = BASE + '/share.png';
   return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${esc(title)}</title><style>${CSS}</style></head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${esc(title)}</title>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="olcorp.ca">
+<meta property="og:title" content="Client Application Tracker">
+<meta property="og:description" content="Track your Canadian immigration application status with Olfindo Immigration Consulting Corp.">
+<meta property="og:image" content="${OG_IMG}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="olcorp.ca, Olfindo Immigration Consulting Corp, Client Application Tracker">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Client Application Tracker">
+<meta name="twitter:description" content="Track your Canadian immigration application status with Olfindo Immigration Consulting Corp.">
+<meta name="twitter:image" content="${OG_IMG}">
+<style>${CSS}</style></head>
 <body><div class="wrap">
 <div class="topbar"><span style="display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center"><img class="brandlogo" src="/logo.png" alt="olcorp.ca, Olfindo Immigration Consulting Corp"><span class="div">Client Application Tracker</span></span></div>
 ${body}
