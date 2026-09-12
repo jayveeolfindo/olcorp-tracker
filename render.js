@@ -1,7 +1,7 @@
 // Server-side HTML rendering. On-brand with olcorp.ca (off-white, white cards,
 // green accent, mono labels, black pill buttons). Swap the text wordmark for the
 // real logo image if you like (drop a file in /public and reference it).
-const { STAGES, stageIndex } = require('./stages');
+const { STAGES, stagesFor, trackFor, stageIndex } = require('./stages');
 
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
 
@@ -148,12 +148,16 @@ function renderVerify({ error } = {}) {
 
 // ---- the client's tracker page ----
 function renderTracker(c) {
-  const ci = stageIndex(c.current_stage);
+  const isSinp = /SINP/i.test(c.stream || '');
+  const track = trackFor(c.stream);
+  const STG = stagesFor(track);
+  let ci = stageIndex(c.current_stage, track);
+  if (ci < 0) ci = 0;
   const dates = JSON.parse(c.stage_dates || '{}');
   const checklist = JSON.parse(c.checklist || '[]');
-  const seg = STAGES.map((s, i) => `<i class="${i < ci ? 'on' : (i === ci ? 'cur' : '')}"></i>`).join('');
-  const pct = Math.round(((ci + 0.5) / STAGES.length) * 100);
-  const steps = STAGES.map((s, i) => {
+  const seg = STG.map((s, i) => `<i class="${i < ci ? 'on' : (i === ci ? 'cur' : '')}"></i>`).join('');
+  const pct = Math.round(((ci + 0.5) / STG.length) * 100);
+  const steps = STG.map((s, i) => {
     const cls = i < ci ? 'done' : (i === ci ? 'current' : 'pending');
     const inner = i < ci ? '&#10003;' : (i + 1);
     const when = dates[s.key] ? `<div class="when">${esc(dates[s.key])}</div>` : (i === ci ? '<div class="when">In Progress</div>' : '');
@@ -165,7 +169,6 @@ function renderTracker(c) {
     <div class="istat">${(ircc.rows || []).map(r => `<div class="irow"><span class="il">${esc(r[0])}</span><span class="iv ${r[2] || ''}">${esc(r[1])}</span></div>`).join('')}</div>
     ${(ircc.messages && ircc.messages.length) ? `<div class="imsg-h">Latest Updates From IRCC</div><div class="imsgs">${ircc.messages.map(m => `<div class="imsg"><span class="imd">${esc(m.date)}</span><span class="imt">${esc(m.text)}</span></div>`).join('')}</div>` : ''}`
     : `<div class="istat"><div class="irow"><span class="il">No IRCC status yet. This appears once the e-APR is submitted to IRCC.</span></div></div>`;
-  const isSinp = /SINP/i.test(c.stream || '');
   let sinp = null; try { sinp = JSON.parse(c.sinp || 'null'); } catch (e) { sinp = null; }
   const sinpHtml = sinp ? `
     <div class="istat">${(sinp.rows || []).map(r => `<div class="irow"><span class="il">${esc(r[0])}</span><span class="iv ${r[2] || ''}">${esc(r[1])}</span></div>`).join('')}</div>
@@ -181,11 +184,11 @@ function renderTracker(c) {
       <div><div class="mlabel">${esc(c.stream || '')}</div><h2>${esc(c.full_name)}</h2>
         <div class="noc">${esc(c.noc || '')}${c.employer ? ' · ' + esc(c.employer) : ''}</div>
         ${c.reference ? `<div class="ref">${esc(c.reference)}</div>` : ''}</div>
-      <div class="statusnow"><div class="mlabel">Current Status</div><div class="val">${esc(STAGES[ci].t)}</div>
+      <div class="statusnow"><div class="mlabel">Current Status</div><div class="val">${esc(STG[ci].t)}</div>
         <div class="noc" style="margin-top:6px">Last Updated ${esc(c.updated_at || '')}</div></div>
     </div>
     <div class="seg">${seg}</div>
-    <div class="segcap">Step ${ci + 1} Of ${STAGES.length} · ${pct}% Complete</div>
+    <div class="segcap">Step ${ci + 1} Of ${STG.length} · ${pct}% Complete</div>
     <div class="steps">${steps}</div>
   </div>
   ${isSinp ? `<div class="card" style="margin-top:14px"><div class="panel-h" style="display:flex;justify-content:space-between;align-items:center"><span>SINP Application Status</span>${sinp ? `<span style="font-weight:500;color:var(--faint);font-size:11px;font-family:var(--mono)">SYNCED ${esc(String(sinp.synced || '').toUpperCase())}</span>` : ''}</div>${sinpHtml}</div>` : ''}
@@ -201,7 +204,7 @@ function renderTracker(c) {
 // ---- consultant admin ----
 function renderAdmin(clients, archived = []) {
   const rows = clients.map(c => {
-    const st = STAGES[stageIndex(c.current_stage)];
+    const st = stagesFor(trackFor(c.stream))[stageIndex(c.current_stage, trackFor(c.stream))];
     return `<div class="arow">
       <div><div class="aname">${esc(c.full_name)}</div><div class="ameta">${esc(c.noc || '')}</div></div>
       <div><div class="ameta">${esc(st ? st.t : c.current_stage)}</div><div class="ameta">${esc(c.status_label || '')}</div></div>
