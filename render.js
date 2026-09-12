@@ -38,6 +38,7 @@ h1{font-size:24px;font-weight:800;letter-spacing:-.5px;margin:14px 2px 6px}
 .hero h2{margin:6px 0 4px;font-size:21px;font-weight:800;letter-spacing:-.4px}
 .hero .noc{font-size:12.5px;color:var(--muted)}
 .ref{font-family:var(--mono);font-size:12px;color:#41762f;background:var(--green-soft);border:1px solid #d7e6d0;padding:5px 10px;border-radius:8px;display:inline-block;margin-top:10px}
+.wpexp{font-family:var(--mono);font-size:12px;color:#33475b;background:var(--slate-soft);border:1px solid #d5dde2;padding:5px 10px;border-radius:8px;display:inline-block;margin-top:10px}
 .statusnow{text-align:right;min-width:180px}.statusnow .val{font-size:16px;font-weight:800;margin-top:6px}
 .seg{display:flex;gap:5px;padding:16px 22px 4px}.seg i{height:5px;border-radius:99px;flex:1;background:#e6e8e5}
 .seg i.on{background:var(--green)}.seg i.cur{background:var(--green);opacity:.55}
@@ -182,12 +183,16 @@ function appTypeLabel(c) {
   return 'Permanent Residence';
 }
 
-function appBlock(c, idx, active) {
+function appBlock(c, idx, active, ctx = {}) {
   const track = trackFor(c.stream);
   const STG = stagesFor(track);
   let ci = stageIndex(c.current_stage, track);
   if (ci < 0) ci = 0;
   const dates = safeJSON(c.stage_dates, {});
+  // On a PR file, when the client has NO separate work/study/visitor extension
+  // application on the tracker, surface their current work permit expiration here.
+  const isPR = appTypeLabel(c) === 'Permanent Residence';
+  const wpExpiry = (isPR && !ctx.hasExtApp) ? (dates.wp_expiry || null) : null;
   const checklist = safeJSON(c.checklist, []);
   const seg = STG.map((s, i) => `<i class="${i < ci ? 'on' : (i === ci ? 'cur' : '')}"></i>`).join('');
   const pct = Math.round(((ci + 0.5) / STG.length) * 100);
@@ -210,8 +215,8 @@ function appBlock(c, idx, active) {
   <div class="card">
     <div class="hero">
       <div><div class="mlabel">${esc(c.stream || '')}</div><h2>${esc(appTypeLabel(c))}</h2>
-        <div class="noc">${esc(c.noc || '')}${c.employer ? ' · ' + esc(c.employer) : ''}</div>
-        ${c.reference ? `<div class="ref">${esc(c.reference)}</div>` : ''}</div>
+        ${c.reference ? `<div class="ref">${esc(c.reference)}</div>` : ''}
+        ${wpExpiry ? `<div class="wpexp">Current Work Permit Expires · ${esc(wpExpiry)}</div>` : ''}</div>
       <div class="statusnow"><div class="mlabel">Current Status</div><div class="val">${esc(STG[ci].t)}</div>
         <div class="noc" style="margin-top:6px">Last Updated ${esc(c.updated_at || '')}</div></div>
     </div>
@@ -245,7 +250,8 @@ function renderTracker(input, opts = {}) {
   const intro = multi
     ? `<p class="sub" style="margin:0 2px 12px">You have ${list.length} applications in progress. Select one to view its status.</p>`
     : '';
-  const blocks = list.map((c, i) => appBlock(c, i, i === 0)).join('');
+  const hasExtApp = list.some(x => appTypeLabel(x) !== 'Permanent Residence');
+  const blocks = list.map((c, i) => appBlock(c, i, i === 0, { hasExtApp })).join('');
   const consultant = `<div class="card" style="margin-top:14px"><div class="panel-h">Your Consultant</div>
       <div class="contact"><b>Jayvee Olfindo</b>, RCIC (R711813)<br>Olfindo Immigration Consulting Corporation<br>consulting@olcorp.ca<br><br>Questions about your file? Reply to your last email and we'll get back to you.</div></div>`;
   const script = multi
