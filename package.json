@@ -1,0 +1,17 @@
+{
+  "name": "olcorp-tracker-server",
+  "version": "1.0.0",
+  "description": "tracker.olcorp.ca — client application tracker access + session server",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "seed": "node seed.js"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "better-sqlite3": "^13.0.3",
+    "cookie-parser": "^1.4.7",
+    "express": "^5.2.1",
+    "qrcode": "^1.5.4"
+  }
+}
