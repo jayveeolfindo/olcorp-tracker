@@ -183,7 +183,6 @@ function appTypeLabel(c) {
 }
 
 function appBlock(c, idx, active) {
-  const isSinp = /SINP/i.test(c.stream || '');
   const track = trackFor(c.stream);
   const STG = stagesFor(track);
   let ci = stageIndex(c.current_stage, track);
@@ -207,11 +206,6 @@ function appBlock(c, idx, active) {
     <div class="istat">${(ircc.rows || []).map(r => `<div class="irow"><span class="il">${esc(r[0])}</span><span class="iv ${r[2] || ''}">${esc(r[1])}</span></div>`).join('')}</div>
     ${(ircc.messages && ircc.messages.length) ? `<div class="imsg-h">Latest Updates From IRCC</div><div class="imsgs">${ircc.messages.map(m => `<div class="imsg"><span class="imd">${esc(m.date)}</span><span class="imt">${esc(m.text)}</span></div>`).join('')}</div>` : ''}`
     : `<div class="istat"><div class="irow"><span class="il">No IRCC status yet. This appears once the e-APR is submitted to IRCC.</span></div></div>`;
-  const sinp = safeJSON(c.sinp, null);
-  const sinpHtml = sinp ? `
-    <div class="istat">${(sinp.rows || []).map(r => `<div class="irow"><span class="il">${esc(r[0])}</span><span class="iv ${r[2] || ''}">${esc(r[1])}</span></div>`).join('')}</div>
-    ${(sinp.messages && sinp.messages.length) ? `<div class="imsg-h">Latest Updates From SINP</div><div class="imsgs">${sinp.messages.map(m => `<div class="imsg"><span class="imd">${esc(m.date)}</span><span class="imt">${esc(m.text)}</span></div>`).join('')}</div>` : ''}`
-    : `<div class="istat"><div class="irow"><span class="il">No SINP status yet. This appears once the SINP application is submitted.</span></div></div>`;
   return `<div class="appblock" data-app="${idx}"${active ? '' : ' style="display:none"'}>
   <div class="card">
     <div class="hero">
@@ -226,7 +220,6 @@ function appBlock(c, idx, active) {
     <div class="steps">${steps}</div>
     ${hasEst ? '<div class="estnote">Dates shown in yellow are estimated from average processing times. They are projections to help you plan, not commitments, and actual IRCC timelines vary.</div>' : ''}
   </div>
-  ${isSinp ? `<div class="card" style="margin-top:14px"><div class="panel-h" style="display:flex;justify-content:space-between;align-items:center"><span>SINP Application Status</span>${sinp ? `<span style="font-weight:500;color:var(--faint);font-size:11px;font-family:var(--mono)">SYNCED ${esc(String(sinp.synced || '').toUpperCase())}</span>` : ''}</div>${sinpHtml}</div>` : ''}
   <div class="card" style="margin-top:14px"><div class="panel-h" style="display:flex;justify-content:space-between;align-items:center"><span>IRCC Application Status</span>${ircc ? `<span style="font-weight:500;color:var(--faint);font-size:11px;font-family:var(--mono)">SYNCED ${esc(String(ircc.synced || '').toUpperCase())}</span>` : ''}</div>${irccHtml}</div>
   <div class="card" style="margin-top:14px"><div class="panel-h">Document Checklist</div><ul class="check">${checks || '<li class="pend">No items yet.</li>'}</ul></div>
   </div>`;
