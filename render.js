@@ -52,6 +52,8 @@ h1{font-size:24px;font-weight:800;letter-spacing:-.5px;margin:14px 2px 6px}
 .step .d{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.45}
 .step .when{font-family:var(--mono);font-size:10.5px;letter-spacing:.6px;color:var(--faint);margin-top:6px;text-transform:uppercase}
 .step.current .when{color:var(--green)}
+.step .when.est{color:#b7791f}
+.estnote{margin:0 22px 18px;font-size:11px;line-height:1.45;color:#b7791f;font-style:italic}
 .cols{display:grid;grid-template-columns:1fr .82fr;gap:14px;margin-top:14px}
 @media(max-width:820px){.cols{grid-template-columns:1fr}}
 .panel-h{padding:15px 18px;border-bottom:1px solid var(--line2);font-size:13.5px;font-weight:700}
@@ -190,12 +192,15 @@ function appBlock(c, idx, active) {
   const checklist = safeJSON(c.checklist, []);
   const seg = STG.map((s, i) => `<i class="${i < ci ? 'on' : (i === ci ? 'cur' : '')}"></i>`).join('');
   const pct = Math.round(((ci + 0.5) / STG.length) * 100);
+  const isEstV = v => !!v && /^\s*est\.?\b/i.test(String(v));
   const steps = STG.map((s, i) => {
     const cls = i < ci ? 'done' : (i === ci ? 'current' : 'pending');
     const inner = i < ci ? '&#10003;' : (i + 1);
-    const when = dates[s.key] ? `<div class="when">${esc(dates[s.key])}</div>` : (i === ci ? '<div class="when">In Progress</div>' : '');
+    const dv = dates[s.key];
+    const when = dv ? `<div class="when${isEstV(dv) ? ' est' : ''}">${esc(dv)}</div>` : (i === ci ? '<div class="when">In Progress</div>' : '');
     return `<div class="step ${cls}"><div class="node">${inner}</div><div><div class="t">${esc(s.t)}</div><div class="d">${esc(s.d)}</div>${when}</div></div>`;
   }).join('');
+  const hasEst = STG.some(s => isEstV(dates[s.key]));
   const checks = checklist.map(k => `<li class="${k.done ? '' : 'pend'}"><span class="tick ${k.done ? 'ok' : 'wait'}">${k.done ? '&#10003;' : '&#8226;'}</span>${esc(k.label)}</li>`).join('');
   const ircc = safeJSON(c.ircc, null);
   const irccHtml = ircc ? `
@@ -219,6 +224,7 @@ function appBlock(c, idx, active) {
     <div class="seg">${seg}</div>
     <div class="segcap">Step ${ci + 1} Of ${STG.length} · ${pct}% Complete</div>
     <div class="steps">${steps}</div>
+    ${hasEst ? '<div class="estnote">Dates shown in yellow are estimated from average processing times. They are projections to help you plan, not commitments, and actual IRCC timelines vary.</div>' : ''}
   </div>
   ${isSinp ? `<div class="card" style="margin-top:14px"><div class="panel-h" style="display:flex;justify-content:space-between;align-items:center"><span>SINP Application Status</span>${sinp ? `<span style="font-weight:500;color:var(--faint);font-size:11px;font-family:var(--mono)">SYNCED ${esc(String(sinp.synced || '').toUpperCase())}</span>` : ''}</div>${sinpHtml}</div>` : ''}
   <div class="card" style="margin-top:14px"><div class="panel-h" style="display:flex;justify-content:space-between;align-items:center"><span>IRCC Application Status</span>${ircc ? `<span style="font-weight:500;color:var(--faint);font-size:11px;font-family:var(--mono)">SYNCED ${esc(String(ircc.synced || '').toUpperCase())}</span>` : ''}</div>${irccHtml}</div>
