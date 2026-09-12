@@ -140,6 +140,12 @@ app.post('/admin/clients/:id/status', adminAuth, async (req, res) => {
 app.post('/admin/clients/:id/archive', adminAuth, (req, res) => { DB.archiveClient(req.params.id); res.redirect('/admin'); });
 app.post('/admin/clients/:id/restore', adminAuth, (req, res) => { DB.restoreClient(req.params.id); res.redirect('/admin'); });
 app.post('/admin/clients/:id/delete',  adminAuth, (req, res) => { DB.deleteClient(req.params.id); res.redirect('/admin'); });
+// Admin preview: render the client's tracker page exactly as the client sees it (read-only).
+app.get('/admin/clients/:id/preview', adminAuth, (req, res) => {
+  const c = DB.getClient(req.params.id);
+  if (!c) return res.status(404).send('Client not found.');
+  res.send(R.renderTracker(c, { preview: true }));
+});
 app.post('/admin/clients/:id/email-link', adminAuth, async (req, res) => {
   const c = DB.getClient(req.params.id);
   if (!c) return res.status(404).send('Client not found.');

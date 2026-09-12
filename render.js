@@ -147,7 +147,7 @@ function renderVerify({ error } = {}) {
 }
 
 // ---- the client's tracker page ----
-function renderTracker(c) {
+function renderTracker(c, opts = {}) {
   const isSinp = /SINP/i.test(c.stream || '');
   const track = trackFor(c.stream);
   const STG = stagesFor(track);
@@ -174,11 +174,17 @@ function renderTracker(c) {
     <div class="istat">${(sinp.rows || []).map(r => `<div class="irow"><span class="il">${esc(r[0])}</span><span class="iv ${r[2] || ''}">${esc(r[1])}</span></div>`).join('')}</div>
     ${(sinp.messages && sinp.messages.length) ? `<div class="imsg-h">Latest Updates From SINP</div><div class="imsgs">${sinp.messages.map(m => `<div class="imsg"><span class="imd">${esc(m.date)}</span><span class="imt">${esc(m.text)}</span></div>`).join('')}</div>` : ''}`
     : `<div class="istat"><div class="irow"><span class="il">No SINP status yet. This appears once the SINP application is submitted.</span></div></div>`;
+  const clientbar = opts.preview
+    ? `<div class="clientbar" style="background:var(--green-soft);border:1px solid #d7e6d0;border-radius:12px;padding:10px 14px">
+        <span class="who">Admin preview. This is exactly what <b>${esc(c.full_name)}</b> sees on their tracker.</span>
+        <a class="signout" href="/admin">Back to Admin</a>
+      </div>`
+    : `<div class="clientbar">
+        <span class="who">Signed in · <b>${esc(c.full_name)}</b></span>
+        <form method="POST" action="/logout" style="margin:0"><button class="signout">Sign out</button></form>
+      </div>`;
   const body = `
-  <div class="clientbar">
-    <span class="who">Signed in · <b>${esc(c.full_name)}</b></span>
-    <form method="POST" action="/logout" style="margin:0"><button class="signout">Sign out</button></form>
-  </div>
+  ${clientbar}
   <div class="card">
     <div class="hero">
       <div><div class="mlabel">${esc(c.stream || '')}</div><h2>${esc(c.full_name)}</h2>
@@ -209,6 +215,7 @@ function renderAdmin(clients, archived = []) {
       <div><div class="aname">${esc(c.full_name)}</div><div class="ameta">${esc(c.noc || '')}</div></div>
       <div><div class="ameta">${esc(st ? st.t : c.current_stage)}</div><div class="ameta">${esc(c.status_label || '')}</div></div>
       <div class="actions">
+        <a class="abtn ghost" href="/admin/clients/${esc(c.id)}/preview" target="_blank">View as client</a>
         <a class="abtn ghost" href="/admin/clients/${esc(c.id)}/edit">Edit</a>
         <a class="abtn ghost" href="/admin/clients/${esc(c.id)}/status">Status</a>
         <a class="abtn" href="/admin/clients/${esc(c.id)}/link">Issue link &#9656;</a>
