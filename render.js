@@ -362,6 +362,7 @@ function renderClientForm(c) {
     </div>
 
     <div class="sec"><h4>Milestone Dates <span class="hint2">(optional, shown under each step)</span></h4>
+      <div class="field"><label>Current Work Permit Expiration <span class="hint2">(shown on a PR file only when the client has no Work Permit Extension file; leave blank to hide)</span></label><input name="wp_expiry" value="${esc(dates.wp_expiry || '')}" placeholder="e.g. Oct 18, 2027"></div>
       <div class="stagegrid">${stageInputs}</div>
     </div>
 

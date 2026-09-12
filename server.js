@@ -111,6 +111,11 @@ app.post('/admin/clients', adminAuth, (req, res) => {
     try { ircc = JSON.parse(existing.ircc || 'null'); } catch (e) {}
     try { sinp = JSON.parse(existing.sinp || 'null'); } catch (e) {}
   }
+  const stageDates = F.parseStageDates(b);
+  // Current Work Permit Expiration is stored in stage_dates (it has no milestone
+  // step of its own) so it survives admin saves. Blank clears it, like the other dates.
+  const wpExp = String(b.wp_expiry || '').trim();
+  if (wpExp) stageDates.wp_expiry = wpExp;
   DB.upsertClient({
     id,
     uci: b.uci, dob: String(b.dob || '').trim(), last: b.last,
@@ -120,7 +125,7 @@ app.post('/admin/clients', adminAuth, (req, res) => {
     current_stage: b.current_stage || 'intake',
     status_label: b.status_label, next_action: b.next_action,
     updated_at: String(b.updated_at || '').trim() || new Date().toISOString().slice(0, 10),
-    stage_dates: F.parseStageDates(b),
+    stage_dates: stageDates,
     checklist: F.parseChecklist(b.checklist),
     ircc, sinp
   });
