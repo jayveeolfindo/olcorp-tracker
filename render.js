@@ -13,9 +13,8 @@ const CSS = `
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
 .wrap{max-width:1040px;margin:0 auto;padding:0 22px 60px}
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 0}
-.logo{display:inline-flex;align-items:center;background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:6px 13px;font-weight:700;font-size:15px;box-shadow:var(--shadow)}
-.logo .ca{color:var(--green)}
-.div{color:var(--faint);font-size:13px;margin-left:10px}
+.brandlogo{height:30px;width:auto;display:block;background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:6px 12px;box-shadow:var(--shadow)}
+.div{color:var(--faint);font-size:13px}
 .mlabel{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:1.2px;color:var(--green);text-transform:uppercase}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
 h1{font-size:24px;font-weight:800;letter-spacing:-.5px;margin:14px 2px 6px}
@@ -84,13 +83,22 @@ select{width:100%;font-family:var(--sans);font-size:14px;border:1.5px solid var(
 .hint2{font-size:11px;color:var(--faint);margin:5px 0 0;line-height:1.45}
 .stagegrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:600px){.stagegrid{grid-template-columns:1fr}}
 code{font-family:var(--mono);font-size:11px;background:var(--slate-soft);padding:1px 5px;border-radius:5px}
+.ltable{width:100%;border-collapse:collapse;font-size:12.5px}
+.ltable th,.ltable td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line2)}
+.ltable th{font-family:var(--mono);font-size:10px;letter-spacing:.6px;text-transform:uppercase;color:var(--faint);font-weight:500}
+.ltable td.mono{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.pill{font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px}
+.pill.ok{background:var(--green-soft);color:#41762f}.pill.fail{background:#fbeceb;color:#b23c30}.pill.locked{background:#f6efe1;color:#8a641c}
+.checkrow{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ink);cursor:pointer}
+.checkrow input{width:16px;height:16px}
+.arow.arch{opacity:.72}
 `;
 
 function page(title, body) {
   return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${esc(title)}</title><style>${CSS}</style></head>
 <body><div class="wrap">
-<div class="topbar"><span><span class="logo">olcorp<span class="ca">.ca</span></span><span class="div">— Client Application Tracker</span></span></div>
+<div class="topbar"><span style="display:inline-flex;align-items:center;gap:10px"><img class="brandlogo" src="/logo.png" alt="olcorp.ca, Olfindo Immigration Consulting Corp"><span class="div">Client Application Tracker</span></span></div>
 ${body}
 </div></body></html>`;
 }
@@ -156,13 +164,13 @@ function renderTracker(c) {
   const irccHtml = ircc ? `
     <div class="istat">${(ircc.rows || []).map(r => `<div class="irow"><span class="il">${esc(r[0])}</span><span class="iv ${r[2] || ''}">${esc(r[1])}</span></div>`).join('')}</div>
     ${(ircc.messages && ircc.messages.length) ? `<div class="imsg-h">Latest Updates From IRCC</div><div class="imsgs">${ircc.messages.map(m => `<div class="imsg"><span class="imd">${esc(m.date)}</span><span class="imt">${esc(m.text)}</span></div>`).join('')}</div>` : ''}`
-    : `<div class="istat"><div class="irow"><span class="il">No IRCC status yet — this appears once the e-APR is submitted to IRCC.</span></div></div>`;
+    : `<div class="istat"><div class="irow"><span class="il">No IRCC status yet. This appears once the e-APR is submitted to IRCC.</span></div></div>`;
   const isSinp = /SINP/i.test(c.stream || '');
   let sinp = null; try { sinp = JSON.parse(c.sinp || 'null'); } catch (e) { sinp = null; }
   const sinpHtml = sinp ? `
     <div class="istat">${(sinp.rows || []).map(r => `<div class="irow"><span class="il">${esc(r[0])}</span><span class="iv ${r[2] || ''}">${esc(r[1])}</span></div>`).join('')}</div>
     ${(sinp.messages && sinp.messages.length) ? `<div class="imsg-h">Latest Updates From SINP</div><div class="imsgs">${sinp.messages.map(m => `<div class="imsg"><span class="imd">${esc(m.date)}</span><span class="imt">${esc(m.text)}</span></div>`).join('')}</div>` : ''}`
-    : `<div class="istat"><div class="irow"><span class="il">No SINP status yet — this appears once the SINP application is submitted.</span></div></div>`;
+    : `<div class="istat"><div class="irow"><span class="il">No SINP status yet. This appears once the SINP application is submitted.</span></div></div>`;
   const body = `
   <div class="clientbar">
     <span class="who">Signed in · <b>${esc(c.full_name)}</b></span>
@@ -191,7 +199,7 @@ function renderTracker(c) {
 }
 
 // ---- consultant admin ----
-function renderAdmin(clients) {
+function renderAdmin(clients, archived = []) {
   const rows = clients.map(c => {
     const st = STAGES[stageIndex(c.current_stage)];
     return `<div class="arow">
@@ -201,13 +209,42 @@ function renderAdmin(clients) {
         <a class="abtn ghost" href="/admin/clients/${esc(c.id)}/edit">Edit</a>
         <a class="abtn ghost" href="/admin/clients/${esc(c.id)}/status">Status</a>
         <a class="abtn" href="/admin/clients/${esc(c.id)}/link">Issue link &#9656;</a>
+        <form method="POST" action="/admin/clients/${esc(c.id)}/archive" style="margin:0"><button class="abtn ghost">Archive</button></form>
       </div>
     </div>`;
   }).join('');
-  const body = `<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px"><h1>Consultant · Active Files</h1><a class="abtn" href="/admin/clients/new">+ Add Client</a></div>
-  <p class="sub">Add or edit a client, paste their SINP/IRCC status, and issue a one-time secure link (QR).</p>
-  <div class="card">${rows || '<div class="arow"><div class="ameta">No active clients yet. Click &ldquo;Add Client&rdquo; to create one.</div></div>'}</div>`;
+  const archivedRows = archived.map(c => `<div class="arow arch">
+      <div><div class="aname">${esc(c.full_name)}</div><div class="ameta">${esc(c.noc || '')}</div></div>
+      <div><div class="ameta">Archived</div></div>
+      <div class="actions">
+        <form method="POST" action="/admin/clients/${esc(c.id)}/restore" style="margin:0"><button class="abtn ghost">Restore</button></form>
+        <form method="POST" action="/admin/clients/${esc(c.id)}/delete" style="margin:0" onsubmit="return confirm('Permanently delete ${esc(c.full_name)} and all their access records? This cannot be undone.')"><button class="abtn ghost" style="color:#b23c30;border-color:#f2ccc8">Delete</button></form>
+      </div>
+    </div>`).join('');
+  const body = `<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px"><h1>Consultant · Active Files</h1>
+    <span style="display:flex;gap:8px"><a class="abtn ghost" href="/admin/log">Access log</a><a class="abtn" href="/admin/clients/new">+ Add Client</a></span></div>
+  <p class="sub">Add or edit a client, paste their SINP/IRCC status, and issue a one-time secure link (QR) or email it to the client.</p>
+  <div class="card">${rows || '<div class="arow"><div class="ameta">No active clients yet. Click &ldquo;Add Client&rdquo; to create one.</div></div>'}</div>
+  ${archived.length ? `<h1 style="font-size:16px;margin-top:26px">Archived Files</h1><div class="card">${archivedRows}</div>` : ''}`;
   return page('Admin · Client Application Tracker', body);
+}
+
+// ---- access log ----
+function renderLog(entries) {
+  const fmt = (ms) => { try { return new Date(ms).toLocaleString('en-CA', { hour12: false }); } catch (e) { return ''; } };
+  const rows = entries.map(e => `<tr>
+    <td class="mono">${esc(fmt(e.at))}</td>
+    <td>${esc(e.client_name || '(unknown)')}</td>
+    <td class="mono">${esc(e.method || '')}</td>
+    <td><span class="pill ${e.result === 'success' ? 'ok' : (e.result === 'locked' ? 'locked' : 'fail')}">${esc(e.result || '')}</span></td>
+    <td class="mono">${esc(e.ip || '')}</td>
+  </tr>`).join('');
+  const body = `<a class="back" href="/admin">&lsaquo; Back to files</a>
+  <h1>Access Log</h1><p class="sub">Every sign-in attempt and secure-link open, newest first. Handy for your records.</p>
+  <div class="card" style="padding:6px 6px;overflow-x:auto"><table class="ltable">
+    <thead><tr><th>When</th><th>Client</th><th>Method</th><th>Result</th><th>IP</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="5" style="padding:16px">No entries yet.</td></tr>'}</tbody></table></div>`;
+  return page('Access Log · Client Application Tracker', body);
 }
 
 // Add / edit a client file.
@@ -232,12 +269,13 @@ function renderClientForm(c) {
         <div class="field"><label>Date of Birth</label><input name="dob" value="${v('dob')}" placeholder="YYYY-MM-DD" required></div>
       </div>
       <div class="field"><label>Principal Applicant&rsquo;s Last Name</label><input name="last" value="${editing ? esc(c.last_norm) : ''}" required></div>
+      <div class="field"><label>Client Email <span class="hint2">(for update notifications, optional)</span></label><input name="client_email" type="email" value="${editing ? esc(c.client_email || '') : ''}" placeholder="client@example.com"></div>
     </div>
 
     <div class="sec"><h4>File Details</h4>
       <div class="row2">
         <div class="field"><label>Stream</label><input name="stream" value="${v('stream')}" placeholder="SINP · Permanent Residence"></div>
-        <div class="field"><label>NOC / Occupation</label><input name="noc" value="${v('noc')}" placeholder="NOC 33102 — Continuing Care Assistant"></div>
+        <div class="field"><label>NOC / Occupation</label><input name="noc" value="${v('noc')}" placeholder="NOC 33102 - Continuing Care Assistant"></div>
       </div>
       <div class="row2">
         <div class="field"><label>Employer</label><input name="employer" value="${v('employer')}"></div>
@@ -253,7 +291,7 @@ function renderClientForm(c) {
       </div>
     </div>
 
-    <div class="sec"><h4>Milestone Dates <span class="hint2">— optional, shown under each step</span></h4>
+    <div class="sec"><h4>Milestone Dates <span class="hint2">(optional, shown under each step)</span></h4>
       <div class="stagegrid">${stageInputs}</div>
     </div>
 
@@ -289,9 +327,13 @@ function renderStatusForm(c) {
   const body = `<a class="back" href="/admin">&lsaquo; Back to files</a>
   <form class="card form" method="POST" action="/admin/clients/${esc(c.id)}/status">
     <h1>Update Status</h1>
-    <p class="sub">${esc(c.full_name)} — paste what you see in each portal.</p>
+    <p class="sub">${esc(c.full_name)}: paste what you see in each portal.</p>
     ${section('sinp', 'SINP Status (OASIS)', sinp)}
     ${section('ircc', 'IRCC Status (Portal)', ircc)}
+    <div class="sec">
+      <label class="checkrow"><input type="checkbox" name="notify" ${c.client_email ? '' : 'disabled'}> Email the client that there is an update (sends a fresh secure link)</label>
+      <p class="hint2">${c.client_email ? ('Sends to ' + esc(c.client_email) + '. Requires email to be configured on the server.') : 'Add a client email on the Edit screen to enable this.'}</p>
+    </div>
     <div class="sec"><button class="btn" style="max-width:240px">Save Status</button></div>
   </form>`;
   return page('Update Status · ' + c.full_name, body);
@@ -306,9 +348,12 @@ function renderLinkIssued(c, link, qrDataUrl) {
     <div style="text-align:center;margin:8px 0 16px"><img src="${qrDataUrl}" alt="QR" style="width:190px;height:190px;border:1px solid var(--line);border-radius:12px;padding:8px;background:#fff"></div>
     <div class="linkcode">${esc(link)}</div>
     <div class="chips"><span>Single-use</span><span>Expires ${esc(process.env.LINK_TTL_HOURS || '72')}h</span><span>Device-bound</span></div>
-    <form method="POST" action="/admin/clients/${esc(c.id)}/revoke" style="margin-top:18px"><button class="signout">Revoke outstanding links & sessions</button></form>
+    ${c.client_email
+      ? `<form method="POST" action="/admin/clients/${esc(c.id)}/email-link" style="margin-top:16px"><button class="abtn" style="width:100%">Email this link to ${esc(c.client_email)}</button></form>`
+      : `<p class="hint2" style="margin-top:16px">Add a client email on the Edit screen to email links directly.</p>`}
+    <form method="POST" action="/admin/clients/${esc(c.id)}/revoke" style="margin-top:12px"><button class="signout">Revoke outstanding links & sessions</button></form>
   </div>`;
   return page('Access Link · ' + c.full_name, body);
 }
 
-module.exports = { renderLogin, renderVerify, renderTracker, renderAdmin, renderLinkIssued, renderClientForm, renderStatusForm, page };
+module.exports = { renderLogin, renderVerify, renderTracker, renderAdmin, renderLog, renderLinkIssued, renderClientForm, renderStatusForm, page };

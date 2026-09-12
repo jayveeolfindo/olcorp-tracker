@@ -1,13 +1,17 @@
 // tracker.olcorp.ca — access + session server (starter).
 // Implements the three-keys model: one-time link, device session, manual login.
 try { require('dotenv').config(); } catch (_) { /* dotenv optional — env vars can be set directly */ }
+const path = require('path');
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const QRCode = require('qrcode');
 const S = require('./lib/security');
 const F = require('./lib/forms');
+const M = require('./lib/mailer');
 const DB = require('./db');
 const R = require('./render');
+
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
 
 const PORT            = process.env.PORT || 3000;
 const BASE_URL        = process.env.BASE_URL || `http://localhost:${PORT}`;
@@ -23,6 +27,30 @@ const app = express();
 app.set('trust proxy', 1);
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+app.use(express.static(path.join(__dirname, 'public')));   // serves /logo.png
+
+// Issue a fresh one-time link for a client and email it (update notification / resend).
+async function issueAndEmailLink(c) {
+  const token = S.genToken();
+  DB.issueToken(c.id, token, LINK_TTL_HOURS);
+  const link = `${BASE_URL}/o/${token}`;
+  const first = String(c.full_name || '').trim().split(/\s+/)[0] || 'there';
+  const subject = 'Update on your application';
+  const text = `Hi ${first},\n\n` +
+    `There is an update on your permanent residence application. You can view it here:\n${link}\n\n` +
+    `This is a secure, one-time link that expires in ${LINK_TTL_HOURS} hours. When you open it, you will confirm your date of birth to sign in.\n\n` +
+    `If you have any questions, just reply to this email.\n\n` +
+    `Jayvee Olfindo, RCIC (R711813)\nOlfindo Immigration Consulting Corporation\nconsulting@olcorp.ca`;
+  const html = `<div style="font-family:-apple-system,Segoe UI,Arial,sans-serif;font-size:14px;color:#0a0a0a;line-height:1.5">
+    <p>Hi ${esc(first)},</p>
+    <p>There is an update on your permanent residence application. You can view it here:</p>
+    <p><a href="${link}" style="display:inline-block;background:#161616;color:#fff;text-decoration:none;padding:11px 20px;border-radius:999px;font-weight:700">View my application</a></p>
+    <p style="color:#5b6b78;font-size:12.5px">This is a secure, one-time link that expires in ${LINK_TTL_HOURS} hours. When you open it, you will confirm your date of birth to sign in.</p>
+    <p style="color:#5b6b78;font-size:12.5px">If you have any questions, just reply to this email.</p>
+    <p style="margin-top:18px">Jayvee Olfindo, RCIC (R711813)<br>Olfindo Immigration Consulting Corporation<br>consulting@olcorp.ca</p>
+  </div>`;
+  return M.send({ to: c.client_email, subject, text, html });
+}
 
 const ipOf = (req) => req.ip;
 const uaOf = (req) => req.get('user-agent') || '';
@@ -41,7 +69,8 @@ function adminAuth(req, res, next) {
   res.set('WWW-Authenticate', 'Basic realm="Olcorp Tracker Admin"').status(401).send('Authentication required.');
 }
 
-app.get('/admin', adminAuth, (req, res) => res.send(R.renderAdmin(DB.listClients())));
+app.get('/admin', adminAuth, (req, res) => res.send(R.renderAdmin(DB.listClients(), DB.listArchived())));
+app.get('/admin/log', adminAuth, (req, res) => res.send(R.renderLog(DB.recentLog(200))));
 
 // --- add / edit a client ---
 app.get('/admin/clients/new', adminAuth, (req, res) => res.send(R.renderClientForm(null)));
@@ -65,6 +94,7 @@ app.post('/admin/clients', adminAuth, (req, res) => {
     uci: b.uci, dob: String(b.dob || '').trim(), last: b.last,
     full_name: String(b.full_name || '').trim(),
     stream: b.stream, noc: b.noc, employer: b.employer, reference: b.reference,
+    client_email: String(b.client_email || '').trim() || null,
     current_stage: b.current_stage || 'intake',
     status_label: b.status_label, next_action: b.next_action,
     updated_at: String(b.updated_at || '').trim() || new Date().toISOString().slice(0, 10),
@@ -81,7 +111,7 @@ app.get('/admin/clients/:id/status', adminAuth, (req, res) => {
   if (!c) return res.status(404).send('Client not found.');
   res.send(R.renderStatusForm(c));
 });
-app.post('/admin/clients/:id/status', adminAuth, (req, res) => {
+app.post('/admin/clients/:id/status', adminAuth, async (req, res) => {
   const c = DB.getClient(req.params.id);
   if (!c) return res.status(404).send('Client not found.');
   const b = req.body;
@@ -90,6 +120,20 @@ app.post('/admin/clients/:id/status', adminAuth, (req, res) => {
   obj.ircc = F.buildStatus(b.ircc_synced, b.ircc_rows, b.ircc_msgs);
   obj.updated_at = new Date().toISOString().slice(0, 10);
   DB.upsertClient(obj);
+  if (b.notify === 'on' && obj.client_email) {
+    try { await issueAndEmailLink(obj); } catch (e) { console.error('notify failed:', e.message); }
+  }
+  res.redirect('/admin');
+});
+
+// archive / restore / permanent delete, and email a secure link
+app.post('/admin/clients/:id/archive', adminAuth, (req, res) => { DB.archiveClient(req.params.id); res.redirect('/admin'); });
+app.post('/admin/clients/:id/restore', adminAuth, (req, res) => { DB.restoreClient(req.params.id); res.redirect('/admin'); });
+app.post('/admin/clients/:id/delete',  adminAuth, (req, res) => { DB.deleteClient(req.params.id); res.redirect('/admin'); });
+app.post('/admin/clients/:id/email-link', adminAuth, async (req, res) => {
+  const c = DB.getClient(req.params.id);
+  if (!c) return res.status(404).send('Client not found.');
+  try { await issueAndEmailLink(c); } catch (e) { console.error('email-link failed:', e.message); }
   res.redirect('/admin');
 });
 

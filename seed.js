@@ -7,7 +7,7 @@ const clients = [
     id: 'ernalyn', uci: '11-0099-8877', dob: '1990-05-14', last: 'Reformina',
     full_name: 'Ernalyn Dabalos Reformina', stream: 'SINP · Permanent Residence',
     noc: 'NOC 33102 — Continuing Care Assistant', employer: 'Saskatchewan Health Authority',
-    reference: 'SINP #1184278 · e-APR AOR Received', current_stage: 'eapr',
+    reference: 'SINP #1184278 · e-APR AOR Received', client_email: 'ernalyn@example.com', current_stage: 'eapr',
     status_label: 'AOR Received', next_action: 'Biometrics Instruction Letter (BIL)', updated_at: '2026-08-11',
     stage_dates: { intake: 'Mar 2026', sinp: 'Apr 18, 2026', nom: 'Jun 2, 2026', eapr: 'Aug 6, 2026 · AOR' },
     checklist: [

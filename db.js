@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS clients (
   last_norm     TEXT NOT NULL,             -- principal applicant surname, normalized
   full_name     TEXT NOT NULL,
   stream        TEXT, noc TEXT, employer TEXT, reference TEXT,
+  client_email  TEXT,                       -- for update notifications (optional)
   current_stage TEXT NOT NULL,             -- stage key
   status_label  TEXT, next_action TEXT,
   stage_dates   TEXT DEFAULT '{}',         -- JSON: {stageKey: 'label'}
@@ -55,8 +56,8 @@ const now = () => Date.now();
 
 // ---- clients ----
 const insertClient = db.prepare(`INSERT OR REPLACE INTO clients
-  (id,uci_norm,dob,last_norm,full_name,stream,noc,employer,reference,current_stage,status_label,next_action,stage_dates,checklist,ircc,sinp,updated_at,active)
-  VALUES (@id,@uci_norm,@dob,@last_norm,@full_name,@stream,@noc,@employer,@reference,@current_stage,@status_label,@next_action,@stage_dates,@checklist,@ircc,@sinp,@updated_at,1)`);
+  (id,uci_norm,dob,last_norm,full_name,stream,noc,employer,reference,client_email,current_stage,status_label,next_action,stage_dates,checklist,ircc,sinp,updated_at,active)
+  VALUES (@id,@uci_norm,@dob,@last_norm,@full_name,@stream,@noc,@employer,@reference,@client_email,@current_stage,@status_label,@next_action,@stage_dates,@checklist,@ircc,@sinp,@updated_at,1)`);
 
 function upsertClient(c) {
   insertClient.run({
@@ -66,6 +67,7 @@ function upsertClient(c) {
     last_norm: normName(c.last),
     full_name: c.full_name,
     stream: c.stream || null, noc: c.noc || null, employer: c.employer || null, reference: c.reference || null,
+    client_email: c.client_email || null,
     current_stage: c.current_stage,
     status_label: c.status_label || null, next_action: c.next_action || null,
     stage_dates: JSON.stringify(c.stage_dates || {}),
@@ -78,6 +80,16 @@ function upsertClient(c) {
 const _getClient = db.prepare(`SELECT * FROM clients WHERE id = ?`);
 const getClient = (id) => _getClient.get(id);
 const listClients = () => db.prepare(`SELECT * FROM clients WHERE active = 1 ORDER BY full_name`).all();
+const listArchived = () => db.prepare(`SELECT * FROM clients WHERE active = 0 ORDER BY full_name`).all();
+const archiveClient = (id) => db.prepare(`UPDATE clients SET active = 0 WHERE id = ?`).run(id);
+const restoreClient = (id) => db.prepare(`UPDATE clients SET active = 1 WHERE id = ?`).run(id);
+// Permanent delete: removes the file and everything tied to it.
+const deleteClient = db.transaction((id) => {
+  db.prepare(`DELETE FROM access_tokens WHERE client_id = ?`).run(id);
+  db.prepare(`DELETE FROM sessions WHERE client_id = ?`).run(id);
+  db.prepare(`DELETE FROM access_log WHERE client_id = ?`).run(id);
+  db.prepare(`DELETE FROM clients WHERE id = ?`).run(id);
+});
 
 const _findByCreds = db.prepare(`SELECT * FROM clients WHERE uci_norm = ? AND dob = ? AND last_norm = ? AND active = 1`);
 const findByCreds = (uci, dob, last) => _findByCreds.get(normUci(uci), String(dob).trim(), normName(last));
@@ -88,6 +100,7 @@ function rowToObj(r) {
   return {
     id: r.id, uci: r.uci_norm, dob: r.dob, last: r.last_norm, full_name: r.full_name,
     stream: r.stream, noc: r.noc, employer: r.employer, reference: r.reference,
+    client_email: r.client_email,
     current_stage: r.current_stage, status_label: r.status_label, next_action: r.next_action,
     updated_at: r.updated_at,
     stage_dates: J(r.stage_dates, '{}'), checklist: J(r.checklist, '[]'),
@@ -135,9 +148,16 @@ const log = (clientId, ip, ua, method, result) =>
   db.prepare(`INSERT INTO access_log (client_id,at,ip,user_agent,method,result) VALUES (?,?,?,?,?,?)`)
     .run(clientId || null, now(), ip || null, ua || null, method, result);
 
+// Recent access-log entries joined with the client name (for the admin log view).
+const recentLog = (limit = 200) => db.prepare(
+  `SELECT l.*, c.full_name AS client_name
+   FROM access_log l LEFT JOIN clients c ON c.id = l.client_id
+   ORDER BY l.at DESC LIMIT ?`).all(limit);
+
 module.exports = {
-  db, upsertClient, getClient, listClients, findByCreds, rowToObj,
+  db, upsertClient, getClient, listClients, listArchived, findByCreds, rowToObj,
+  archiveClient, restoreClient, deleteClient,
   issueToken, consumeToken, revokeTokens,
   createSession, getSession, touchSession, confirmSession, revokeSession, revokeClientSessions,
-  log
+  log, recentLog
 };
