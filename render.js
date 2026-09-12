@@ -4,6 +4,7 @@
 const { STAGES, stagesFor, trackFor, stageIndex } = require('./stages');
 
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+const safeJSON = (s, d) => { if (!s) return d; try { return JSON.parse(s); } catch (e) { return d; } };
 
 const CSS = `
 :root{--bg:#f2f2f0;--card:#fff;--card2:#fbfcfd;--ink:#0a0a0a;--dark:#161616;--muted:#5b6b78;--faint:#8a97a2;
@@ -92,6 +93,9 @@ code{font-family:var(--mono);font-size:11px;background:var(--slate-soft);padding
 .checkrow{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ink);cursor:pointer}
 .checkrow input{width:16px;height:16px}
 .arow.arch{opacity:.72}
+.apptabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 2px 14px}
+.apptab{background:#fff;border:1.5px solid var(--line);color:var(--muted);border-radius:999px;padding:8px 16px;font-size:12.5px;font-weight:700;cursor:pointer}
+.apptab.on{background:var(--dark);color:#fff;border-color:var(--dark)}
 `;
 
 function page(title, body) {
@@ -147,14 +151,28 @@ function renderVerify({ error } = {}) {
 }
 
 // ---- the client's tracker page ----
-function renderTracker(c, opts = {}) {
+// Accepts a single client object or an array of the client's applications
+// (all files that share the same UCI + DOB + last name). Shows one tab per
+// application so a client who logs in with their UCI sees every pending file.
+function appTypeLabel(c) {
+  const track = trackFor(c.stream);
+  if (track === 'temp-sinp' || track === 'temp') {
+    const s = String(c.stream || '') + ' ' + String(c.reference || '');
+    if (/study/i.test(s)) return 'Study Permit Extension';
+    if (/visitor|\bVR\b/i.test(s)) return 'Visitor Record Extension';
+    return 'Work Permit Extension';
+  }
+  return 'Permanent Residence';
+}
+
+function appBlock(c, idx, active) {
   const isSinp = /SINP/i.test(c.stream || '');
   const track = trackFor(c.stream);
   const STG = stagesFor(track);
   let ci = stageIndex(c.current_stage, track);
   if (ci < 0) ci = 0;
-  const dates = JSON.parse(c.stage_dates || '{}');
-  const checklist = JSON.parse(c.checklist || '[]');
+  const dates = safeJSON(c.stage_dates, {});
+  const checklist = safeJSON(c.checklist, []);
   const seg = STG.map((s, i) => `<i class="${i < ci ? 'on' : (i === ci ? 'cur' : '')}"></i>`).join('');
   const pct = Math.round(((ci + 0.5) / STG.length) * 100);
   const steps = STG.map((s, i) => {
@@ -164,30 +182,20 @@ function renderTracker(c, opts = {}) {
     return `<div class="step ${cls}"><div class="node">${inner}</div><div><div class="t">${esc(s.t)}</div><div class="d">${esc(s.d)}</div>${when}</div></div>`;
   }).join('');
   const checks = checklist.map(k => `<li class="${k.done ? '' : 'pend'}"><span class="tick ${k.done ? 'ok' : 'wait'}">${k.done ? '&#10003;' : '&#8226;'}</span>${esc(k.label)}</li>`).join('');
-  let ircc = null; try { ircc = JSON.parse(c.ircc || 'null'); } catch (e) { ircc = null; }
+  const ircc = safeJSON(c.ircc, null);
   const irccHtml = ircc ? `
     <div class="istat">${(ircc.rows || []).map(r => `<div class="irow"><span class="il">${esc(r[0])}</span><span class="iv ${r[2] || ''}">${esc(r[1])}</span></div>`).join('')}</div>
     ${(ircc.messages && ircc.messages.length) ? `<div class="imsg-h">Latest Updates From IRCC</div><div class="imsgs">${ircc.messages.map(m => `<div class="imsg"><span class="imd">${esc(m.date)}</span><span class="imt">${esc(m.text)}</span></div>`).join('')}</div>` : ''}`
     : `<div class="istat"><div class="irow"><span class="il">No IRCC status yet. This appears once the e-APR is submitted to IRCC.</span></div></div>`;
-  let sinp = null; try { sinp = JSON.parse(c.sinp || 'null'); } catch (e) { sinp = null; }
+  const sinp = safeJSON(c.sinp, null);
   const sinpHtml = sinp ? `
     <div class="istat">${(sinp.rows || []).map(r => `<div class="irow"><span class="il">${esc(r[0])}</span><span class="iv ${r[2] || ''}">${esc(r[1])}</span></div>`).join('')}</div>
     ${(sinp.messages && sinp.messages.length) ? `<div class="imsg-h">Latest Updates From SINP</div><div class="imsgs">${sinp.messages.map(m => `<div class="imsg"><span class="imd">${esc(m.date)}</span><span class="imt">${esc(m.text)}</span></div>`).join('')}</div>` : ''}`
     : `<div class="istat"><div class="irow"><span class="il">No SINP status yet. This appears once the SINP application is submitted.</span></div></div>`;
-  const clientbar = opts.preview
-    ? `<div class="clientbar" style="background:var(--green-soft);border:1px solid #d7e6d0;border-radius:12px;padding:10px 14px">
-        <span class="who">Admin preview. This is exactly what <b>${esc(c.full_name)}</b> sees on their tracker.</span>
-        <a class="signout" href="/admin">Back to Admin</a>
-      </div>`
-    : `<div class="clientbar">
-        <span class="who">Signed in · <b>${esc(c.full_name)}</b></span>
-        <form method="POST" action="/logout" style="margin:0"><button class="signout">Sign out</button></form>
-      </div>`;
-  const body = `
-  ${clientbar}
+  return `<div class="appblock" data-app="${idx}"${active ? '' : ' style="display:none"'}>
   <div class="card">
     <div class="hero">
-      <div><div class="mlabel">${esc(c.stream || '')}</div><h2>${esc(c.full_name)}</h2>
+      <div><div class="mlabel">${esc(c.stream || '')}</div><h2>${esc(appTypeLabel(c))}</h2>
         <div class="noc">${esc(c.noc || '')}${c.employer ? ' · ' + esc(c.employer) : ''}</div>
         ${c.reference ? `<div class="ref">${esc(c.reference)}</div>` : ''}</div>
       <div class="statusnow"><div class="mlabel">Current Status</div><div class="val">${esc(STG[ci].t)}</div>
@@ -199,12 +207,44 @@ function renderTracker(c, opts = {}) {
   </div>
   ${isSinp ? `<div class="card" style="margin-top:14px"><div class="panel-h" style="display:flex;justify-content:space-between;align-items:center"><span>SINP Application Status</span>${sinp ? `<span style="font-weight:500;color:var(--faint);font-size:11px;font-family:var(--mono)">SYNCED ${esc(String(sinp.synced || '').toUpperCase())}</span>` : ''}</div>${sinpHtml}</div>` : ''}
   <div class="card" style="margin-top:14px"><div class="panel-h" style="display:flex;justify-content:space-between;align-items:center"><span>IRCC Application Status</span>${ircc ? `<span style="font-weight:500;color:var(--faint);font-size:11px;font-family:var(--mono)">SYNCED ${esc(String(ircc.synced || '').toUpperCase())}</span>` : ''}</div>${irccHtml}</div>
-  <div class="cols">
-    <div class="card" style="align-self:start"><div class="panel-h">Document Checklist</div><ul class="check">${checks || '<li class="pend">No items yet.</li>'}</ul></div>
-    <div class="card"><div class="panel-h">Your Consultant</div>
-      <div class="contact"><b>Jayvee Olfindo</b>, RCIC (R711813)<br>Olfindo Immigration Consulting Corporation<br>consulting@olcorp.ca<br><br>Questions about your file? Reply to your last email and we'll get back to you.</div></div>
+  <div class="card" style="margin-top:14px"><div class="panel-h">Document Checklist</div><ul class="check">${checks || '<li class="pend">No items yet.</li>'}</ul></div>
   </div>`;
-  return page(`${c.full_name} · Application Tracker`, body);
+}
+
+function renderTracker(input, opts = {}) {
+  const list = Array.isArray(input) ? input.slice() : [input];
+  if (!list.length) return page('Application Tracker', '<div class="card gate"><p>No application on file.</p></div>');
+  const person = list[0];
+  const clientbar = opts.preview
+    ? `<div class="clientbar" style="background:var(--green-soft);border:1px solid #d7e6d0;border-radius:12px;padding:10px 14px">
+        <span class="who">Admin preview. This is exactly what <b>${esc(person.full_name)}</b> sees on their tracker.</span>
+        <a class="signout" href="/admin">Back to Admin</a>
+      </div>`
+    : `<div class="clientbar">
+        <span class="who">Signed in · <b>${esc(person.full_name)}</b></span>
+        <form method="POST" action="/logout" style="margin:0"><button class="signout">Sign out</button></form>
+      </div>`;
+  const multi = list.length > 1;
+  const tabs = multi
+    ? `<div class="apptabs">${list.map((c, i) => `<button class="apptab ${i === 0 ? 'on' : ''}" data-target="${i}">${esc(appTypeLabel(c))}</button>`).join('')}</div>`
+    : '';
+  const intro = multi
+    ? `<p class="sub" style="margin:0 2px 12px">You have ${list.length} applications in progress. Select one to view its status.</p>`
+    : '';
+  const blocks = list.map((c, i) => appBlock(c, i, i === 0)).join('');
+  const consultant = `<div class="card" style="margin-top:14px"><div class="panel-h">Your Consultant</div>
+      <div class="contact"><b>Jayvee Olfindo</b>, RCIC (R711813)<br>Olfindo Immigration Consulting Corporation<br>consulting@olcorp.ca<br><br>Questions about your file? Reply to your last email and we'll get back to you.</div></div>`;
+  const script = multi
+    ? `<script>(function(){var tabs=document.querySelectorAll('.apptab'),blocks=document.querySelectorAll('.appblock');tabs.forEach(function(t){t.addEventListener('click',function(){var tgt=t.getAttribute('data-target');tabs.forEach(function(x){x.classList.toggle('on',x===t);});blocks.forEach(function(b){b.style.display=(b.getAttribute('data-app')===tgt)?'':'none';});});});})();</script>`
+    : '';
+  const body = `
+  ${clientbar}
+  ${intro}
+  ${tabs}
+  ${blocks}
+  ${consultant}
+  ${script}`;
+  return page(`${person.full_name} · Application Tracker`, body);
 }
 
 // ---- consultant admin ----
@@ -215,7 +255,7 @@ function renderAdmin(clients, archived = []) {
       <div><div class="aname">${esc(c.full_name)}</div><div class="ameta">${esc(c.noc || '')}</div></div>
       <div><div class="ameta">${esc(st ? st.t : c.current_stage)}</div><div class="ameta">${esc(c.status_label || '')}</div></div>
       <div class="actions">
-        <a class="abtn ghost" href="/admin/clients/${esc(c.id)}/preview" target="_blank">View as client</a>
+        <a class="abtn ghost" href="/admin/clients/${esc(c.id)}/preview">View as client</a>
         <a class="abtn ghost" href="/admin/clients/${esc(c.id)}/edit">Edit</a>
         <a class="abtn ghost" href="/admin/clients/${esc(c.id)}/status">Status</a>
         <a class="abtn" href="/admin/clients/${esc(c.id)}/link">Issue link &#9656;</a>

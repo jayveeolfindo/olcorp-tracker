@@ -68,6 +68,18 @@ function setSessionCookie(res, id) {
   res.cookie(COOKIE, id, { httpOnly: true, secure: COOKIE_SECURE, sameSite: 'lax', maxAge: SESSION_MS, path: '/' });
 }
 
+// All active applications for the same person (same UCI + DOB + last name).
+// A client logs in with their UCI, so they should see every pending file, not just one.
+function appsForPerson(c) {
+  try {
+    const all = DB.listClients() || [];
+    let mine = all.filter(x => x.uci_norm === c.uci_norm && x.last_norm === c.last_norm && String(x.dob) === String(c.dob));
+    if (!mine.some(x => x.id === c.id)) mine = [c].concat(mine);
+    mine.sort((a, b) => (a.id === c.id ? -1 : (b.id === c.id ? 1 : 0)));  // logged-in file first
+    return mine.length ? mine : [c];
+  } catch (e) { return [c]; }
+}
+
 // ---------- admin (staff) basic auth ----------
 function adminAuth(req, res, next) {
   const h = req.get('authorization') || '';
@@ -144,7 +156,7 @@ app.post('/admin/clients/:id/delete',  adminAuth, (req, res) => { DB.deleteClien
 app.get('/admin/clients/:id/preview', adminAuth, (req, res) => {
   const c = DB.getClient(req.params.id);
   if (!c) return res.status(404).send('Client not found.');
-  res.send(R.renderTracker(c, { preview: true }));
+  res.send(R.renderTracker(appsForPerson(c), { preview: true }));
 });
 app.post('/admin/clients/:id/email-link', adminAuth, async (req, res) => {
   const c = DB.getClient(req.params.id);
@@ -241,7 +253,7 @@ app.get('/', (req, res) => {
   if (!s.confirmed) return res.send(R.renderVerify({}));   // magic-link session awaiting 2nd factor
   const c = DB.getClient(s.client_id);
   if (!c) { DB.revokeSession(s.id); return res.send(R.renderLogin({})); }
-  res.send(R.renderTracker(c));
+  res.send(R.renderTracker(appsForPerson(c)));
 });
 
 app.post('/logout', (req, res) => {

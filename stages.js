@@ -11,7 +11,8 @@ const SINP_STAGES = [
   { key: 'intake',   t: 'Intake & Document Collection', d: 'We gather and verify your identity documents, employment records, and forms.' },
   { key: 'sinp',     t: 'SINP Application Filed',        d: 'Your provincial nomination application is submitted to Saskatchewan.' },
   { key: 'nom',      t: 'Provincial Nomination',         d: 'Saskatchewan issues the nomination certificate.' },
-  { key: 'eapr',     t: 'e-APR Submitted to IRCC',       d: 'Permanent residence application filed federally. Acknowledgement of Receipt (AOR) issued.' },
+  { key: 'eapr',     t: 'e-APR Submitted to IRCC',       d: 'Permanent residence application filed federally in the PR Portal.' },
+  { key: 'aor',      t: 'Acknowledgement of Receipt (AOR)', d: 'IRCC acknowledges receipt and links your file. This appears once the AOR is issued.' },
   { key: 'bio',      t: 'Biometrics',                    d: 'Fingerprints and photo captured at a collection point.' },
   { key: 'medical',  t: 'Medical Exam',                  d: 'Upfront medical completed with a panel physician.' },
   { key: 'bg',       t: 'Background & Security Check',    d: 'IRCC completes eligibility and admissibility review.' },
@@ -21,7 +22,8 @@ const SINP_STAGES = [
 
 const EXPRESS_STAGES = [
   { key: 'intake',   t: 'Intake & Document Collection', d: 'We gather and verify your identity documents, employment records, and forms.' },
-  { key: 'eapr',     t: 'e-APR Submitted to IRCC',       d: 'Permanent residence application filed federally. Acknowledgement of Receipt (AOR) issued.' },
+  { key: 'eapr',     t: 'e-APR Submitted to IRCC',       d: 'Permanent residence application filed federally in the PR Portal.' },
+  { key: 'aor',      t: 'Acknowledgement of Receipt (AOR)', d: 'IRCC acknowledges receipt and links your file. This appears once the AOR is issued.' },
   { key: 'bio',      t: 'Biometrics',                    d: 'Fingerprints and photo captured at a collection point.' },
   { key: 'medical',  t: 'Medical Exam',                  d: 'Upfront medical completed with a panel physician.' },
   { key: 'bg',       t: 'Background & Security Check',    d: 'IRCC completes eligibility and admissibility review.' },
