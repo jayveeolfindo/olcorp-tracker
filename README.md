@@ -55,6 +55,51 @@ Copy `.env.example` to `.env` (or set the vars in your shell):
 | `SMTP_USER` / `SMTP_PASS` | (blank) | Mailbox login. For Gmail, use an **App Password**. |
 | `MAIL_FROM` | (from SMTP_USER) | The "From" address on notification emails. |
 
+## Programmatic API (update from your own automation)
+
+Set a long random `API_KEY` (see the config table) to turn on a small JSON API, so a script or a
+Cowork skill can push updates without the browser. Authenticate every call with a header, either
+`Authorization: Bearer <API_KEY>` or `X-API-Key: <API_KEY>`. All bodies are JSON.
+
+Endpoints:
+
+- `GET  /api/ping` — check the key works.
+- `GET  /api/clients` — list active clients.
+- `GET  /api/clients/:id` — one client.
+- `POST /api/clients` — create (or update, if you pass `id`). To create: `uci`, `dob`, `last`,
+  `full_name` are required. On update, omitted fields keep their current value.
+- `POST /api/clients/:id/status` — update `sinp` and/or `ircc` (each `{synced, rows, messages}`),
+  and optionally `current_stage`, `status_label`, `next_action`; set `"notify": true` to email the
+  client a fresh secure link. This is the call your portal automation will use most.
+- `POST /api/clients/:id/link` — issue a secure link (returns it); `{"email": true}` also emails it.
+- `POST /api/clients/:id/archive` — archive a file.
+
+Status shapes match the app: `rows` is a list of `[label, value, state]` (state = `done`/`prog`/`wait`),
+`messages` is a list of `{date, text}`, `checklist` is a list of `{label, done}`, `stage_dates` is
+`{stageKey: "label"}` where stageKey is one of intake, sinp, nom, eapr, bio, medical, bg, decision, copr.
+
+Example — create a client:
+
+```bash
+curl -X POST https://tracker.olcorp.ca/api/clients \
+  -H "Authorization: Bearer $API_KEY" -H "Content-Type: application/json" \
+  -d '{"id":"reformina","full_name":"Ernalyn Dabalos Reformina","uci":"11-0099-8877",
+       "dob":"1990-05-14","last":"Reformina","stream":"SINP · Permanent Residence",
+       "current_stage":"eapr","status_label":"AOR Received"}'
+```
+
+Example — push a status update (what an automation run would send):
+
+```bash
+curl -X POST https://tracker.olcorp.ca/api/clients/reformina/status \
+  -H "Authorization: Bearer $API_KEY" -H "Content-Type: application/json" \
+  -d '{"ircc":{"synced":"Sep 12, 2026",
+        "rows":[["Application Status","We Are Processing Your Application","prog"],
+                ["Biometrics","Completed","done"]],
+        "messages":[{"date":"Sep 12, 2026","text":"Your biometrics have been received."}]},
+       "current_stage":"bio","notify":true}'
+```
+
 ## Deploy (going live)
 
 1. Point the subdomain `tracker.olcorp.ca` (a DNS record on the domain you already own) at your host.

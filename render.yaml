@@ -26,6 +26,8 @@ services:
         sync: false
       - key: ADMIN_PASS           # your consultant password — choose a STRONG value
         sync: false
+      - key: API_KEY             # long random secret; enables the programmatic API (leave blank to disable)
+        sync: false
       # Email (optional) — fill these only if you want client notifications / emailed links.
       # For Gmail, SMTP_USER is your address and SMTP_PASS is a Gmail App Password.
       - key: SMTP_HOST

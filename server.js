@@ -2,6 +2,7 @@
 // Implements the three-keys model: one-time link, device session, manual login.
 try { require('dotenv').config(); } catch (_) { /* dotenv optional — env vars can be set directly */ }
 const path = require('path');
+const crypto = require('crypto');
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const QRCode = require('qrcode');
@@ -21,19 +22,24 @@ const SESSION_MS      = SESSION_DAYS * 24 * 3600 * 1000;
 const COOKIE_SECURE   = String(process.env.COOKIE_SECURE || 'false') === 'true';
 const ADMIN_USER      = process.env.ADMIN_USER || 'admin';
 const ADMIN_PASS      = process.env.ADMIN_PASS || 'change-me';
+const API_KEY         = process.env.API_KEY || '';   // enables the programmatic API when set
 const COOKIE          = 'olc_sess';
 
 const app = express();
 app.set('trust proxy', 1);
 app.use(express.urlencoded({ extended: false }));
+app.use(express.json({ limit: '1mb' }));                    // for the programmatic API
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));   // serves /logo.png
 
-// Issue a fresh one-time link for a client and email it (update notification / resend).
-async function issueAndEmailLink(c) {
+// Issue a fresh single-use link for a client; returns the full URL.
+function issueLink(c) {
   const token = S.genToken();
   DB.issueToken(c.id, token, LINK_TTL_HOURS);
-  const link = `${BASE_URL}/o/${token}`;
+  return `${BASE_URL}/o/${token}`;
+}
+// Email a given secure link to the client (used by notifications, resend, and the API).
+async function emailLink(c, link) {
   const first = String(c.full_name || '').trim().split(/\s+/)[0] || 'there';
   const subject = 'Update on your application';
   const text = `Hi ${first},\n\n` +
@@ -50,6 +56,10 @@ async function issueAndEmailLink(c) {
     <p style="margin-top:18px">Jayvee Olfindo, RCIC (R711813)<br>Olfindo Immigration Consulting Corporation<br>consulting@olcorp.ca</p>
   </div>`;
   return M.send({ to: c.client_email, subject, text, html });
+}
+// Convenience: issue a link and email it in one step.
+async function issueAndEmailLink(c) {
+  return emailLink(c, issueLink(c));
 }
 
 const ipOf = (req) => req.ip;
@@ -233,6 +243,104 @@ app.post('/logout', (req, res) => {
   if (s) DB.revokeSession(s.id);
   res.clearCookie(COOKIE, { path: '/' });
   res.redirect('/');
+});
+
+// ================= Programmatic API (for your own automation) =================
+// Enable by setting API_KEY on the server. Authenticate each call with either
+//   Authorization: Bearer <API_KEY>   or   X-API-Key: <API_KEY>
+function apiAuth(req, res, next) {
+  if (!API_KEY) return res.status(503).json({ error: 'API disabled. Set API_KEY on the server to enable it.' });
+  const provided = (req.get('authorization') || '').replace(/^Bearer\s+/i, '') || req.get('x-api-key') || '';
+  const a = Buffer.from(String(provided)), b = Buffer.from(String(API_KEY));
+  const ok = a.length === b.length && crypto.timingSafeEqual(a, b);
+  if (!ok) { DB.log(null, ipOf(req), uaOf(req), 'api', 'fail'); return res.status(401).json({ error: 'Invalid API key.' }); }
+  next();
+}
+
+// Health / key check.
+app.get('/api/ping', apiAuth, (req, res) => res.json({ ok: true, time: new Date().toISOString() }));
+
+// List active clients.
+app.get('/api/clients', apiAuth, (req, res) => res.json(DB.listClients().map(r => DB.rowToObj(r))));
+
+// Get one client.
+app.get('/api/clients/:id', apiAuth, (req, res) => {
+  const c = DB.getClient(req.params.id);
+  if (!c) return res.status(404).json({ error: 'Not found' });
+  res.json(DB.rowToObj(c));
+});
+
+// Create or update a client. Provide "id" to update a specific file, or omit to create a new one.
+// Fields: uci, dob, last, full_name (required to create); optional stream, noc, employer, reference,
+// client_email, current_stage, status_label, next_action, updated_at,
+// stage_dates {stageKey:"label"}, checklist [{label,done}], sinp {...}, ircc {...}.
+// On update, any field you omit keeps its current value.
+app.post('/api/clients', apiAuth, (req, res) => {
+  const b = req.body || {};
+  const existing = b.id ? DB.getClient(b.id) : null;
+  if (!existing && (!b.uci || !b.dob || !b.last || !b.full_name)) {
+    return res.status(400).json({ error: 'uci, dob, last, and full_name are required to create a client.' });
+  }
+  const prev = existing ? DB.rowToObj(existing) : {};
+  const id = (existing && existing.id) || (b.id && String(b.id).trim()) || S.genId();
+  const pick = (k, dflt) => (b[k] !== undefined ? b[k] : (existing ? prev[k] : dflt));
+  DB.upsertClient({
+    id,
+    uci: pick('uci'), dob: String(pick('dob') || '').trim(), last: pick('last'), full_name: pick('full_name'),
+    stream: pick('stream'), noc: pick('noc'), employer: pick('employer'), reference: pick('reference'),
+    client_email: pick('client_email', null),
+    current_stage: pick('current_stage', 'intake'),
+    status_label: pick('status_label'), next_action: pick('next_action'),
+    updated_at: b.updated_at || new Date().toISOString().slice(0, 10),
+    stage_dates: pick('stage_dates', {}),
+    checklist: pick('checklist', []),
+    ircc: pick('ircc', null),
+    sinp: pick('sinp', null)
+  });
+  DB.log(id, ipOf(req), uaOf(req), 'api', 'success');
+  res.json({ ok: true, id });
+});
+
+// Update just the status (the common automation call).
+// Body: { sinp:{synced,rows,messages}|null, ircc:{...}|null, current_stage?, status_label?, next_action?, notify?:true }
+app.post('/api/clients/:id/status', apiAuth, async (req, res) => {
+  const c = DB.getClient(req.params.id);
+  if (!c) return res.status(404).json({ error: 'Not found' });
+  const b = req.body || {};
+  const obj = DB.rowToObj(c);
+  if (b.sinp !== undefined) obj.sinp = b.sinp;
+  if (b.ircc !== undefined) obj.ircc = b.ircc;
+  if (b.current_stage) obj.current_stage = b.current_stage;
+  if (b.status_label !== undefined) obj.status_label = b.status_label;
+  if (b.next_action !== undefined) obj.next_action = b.next_action;
+  obj.updated_at = b.updated_at || new Date().toISOString().slice(0, 10);
+  DB.upsertClient(obj);
+  let emailed = false;
+  if (b.notify === true && obj.client_email) {
+    try { const r = await issueAndEmailLink(obj); emailed = !!(r && r.sent); } catch (e) { console.error('api notify failed:', e.message); }
+  }
+  DB.log(c.id, ipOf(req), uaOf(req), 'api', 'success');
+  res.json({ ok: true, id: c.id, emailed });
+});
+
+// Issue a secure link for a client (optionally email it). Body: { email:true|false }
+app.post('/api/clients/:id/link', apiAuth, async (req, res) => {
+  const c = DB.getClient(req.params.id);
+  if (!c) return res.status(404).json({ error: 'Not found' });
+  const link = issueLink(c);
+  let emailed = false;
+  if (req.body && req.body.email === true && c.client_email) {
+    try { const r = await emailLink(c, link); emailed = !!(r && r.sent); } catch (e) { console.error('api link email failed:', e.message); }
+  }
+  res.json({ ok: true, link, expires_hours: LINK_TTL_HOURS, emailed });
+});
+
+// Archive (soft-delete) a client.
+app.post('/api/clients/:id/archive', apiAuth, (req, res) => {
+  const c = DB.getClient(req.params.id);
+  if (!c) return res.status(404).json({ error: 'Not found' });
+  DB.archiveClient(c.id);
+  res.json({ ok: true, id: c.id });
 });
 
 app.listen(PORT, () => console.log(`Olcorp tracker running on ${BASE_URL}  (admin at ${BASE_URL}/admin)`));
