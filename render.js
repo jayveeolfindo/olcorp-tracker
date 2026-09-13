@@ -247,7 +247,7 @@ function appBlock(c, idx, active, ctx = {}) {
     ${hasEst ? '<div class="estnote">Dates shown in yellow are estimated from average processing times. They are projections to help you plan, not commitments, and actual IRCC timelines vary.</div>' : ''}
   </div>
   <div class="card" style="margin-top:14px"><div class="panel-h" style="display:flex;justify-content:space-between;align-items:center"><span>IRCC Application Status</span><span style="font-weight:500;color:var(--faint);font-size:11px;font-family:var(--mono)">SYNCED ${esc(fmtSync(c.updated_at))}</span></div>${irccHtml}</div>
-  <div class="card" style="margin-top:14px"><div class="panel-h">Recommended To Do As Of This Moment</div><div class="rec">${esc(recFor(track, STG[ci].key))}</div></div>
+  <div class="card" style="margin-top:14px"><div class="panel-h">Recommended Action</div><div class="rec">${esc(recFor(track, STG[ci].key))}</div></div>
   </div>`;
 }
 
