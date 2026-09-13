@@ -10,6 +10,15 @@ const safeJSON = (s, d) => { if (!s) return d; try { return JSON.parse(s); } cat
 // Swap this for a Messenger (m.me/...), WhatsApp (wa.me/...) or booking link any time.
 const CONSULT_CHAT_URL = 'https://www.facebook.com/jayveeolfindo';
 
+// Format an ISO date (YYYY-MM-DD) as DD-MON-YYYY, e.g. 2026-09-13 -> 13-SEP-2026.
+function fmtSync(iso) {
+  const MON = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  const p = String(iso || '').split('-');
+  if (p.length !== 3) return String(iso || '');
+  const mo = parseInt(p[1], 10);
+  return `${p[2]}-${MON[mo - 1] || p[1]}-${p[0]}`;
+}
+
 const CSS = `
 :root{--bg:#f2f2f0;--card:#fff;--card2:#fbfcfd;--ink:#0a0a0a;--dark:#161616;--muted:#5b6b78;--faint:#8a97a2;
 --line:#e1e1de;--line2:#ececea;--green:#5f9c52;--green-soft:#eef4ec;--slate-soft:#eef1f3;--radius:16px;
@@ -230,14 +239,14 @@ function appBlock(c, idx, active, ctx = {}) {
         ${c.reference ? `<div class="ref">${esc(c.reference)}</div>` : ''}
         ${wpExpiry ? `<div class="wpexp">Current Work Permit Expires · ${esc(wpExpiry)}</div>` : ''}</div>
       <div class="statusnow"><div class="mlabel">Current Status</div><div class="val">${esc(STG[ci].t)}</div>
-        <div class="noc" style="margin-top:6px">Sync Date: Today</div></div>
+        <div class="noc" style="margin-top:6px">Sync Date: ${esc(fmtSync(c.updated_at))}</div></div>
     </div>
     <div class="seg">${seg}</div>
     <div class="segcap">Step ${ci + 1} Of ${STG.length} · ${pct}% Complete</div>
     <div class="steps">${steps}</div>
     ${hasEst ? '<div class="estnote">Dates shown in yellow are estimated from average processing times. They are projections to help you plan, not commitments, and actual IRCC timelines vary.</div>' : ''}
   </div>
-  <div class="card" style="margin-top:14px"><div class="panel-h" style="display:flex;justify-content:space-between;align-items:center"><span>IRCC Application Status</span><span style="font-weight:500;color:var(--faint);font-size:11px;font-family:var(--mono)">SYNCED TODAY</span></div>${irccHtml}</div>
+  <div class="card" style="margin-top:14px"><div class="panel-h" style="display:flex;justify-content:space-between;align-items:center"><span>IRCC Application Status</span><span style="font-weight:500;color:var(--faint);font-size:11px;font-family:var(--mono)">SYNCED ${esc(fmtSync(c.updated_at))}</span></div>${irccHtml}</div>
   <div class="card" style="margin-top:14px"><div class="panel-h">Recommended To Do As Of This Moment</div><div class="rec">${esc(recFor(track, STG[ci].key))}</div></div>
   </div>`;
 }
@@ -265,7 +274,7 @@ function renderTracker(input, opts = {}) {
   const hasExtApp = list.some(x => appTypeLabel(x) !== 'Permanent Residence');
   const blocks = list.map((c, i) => appBlock(c, i, i === 0, { hasExtApp })).join('');
   const consultant = `<div class="card" style="margin-top:14px"><div class="panel-h">Your Consultant</div>
-      <div class="contact"><b>Jayvee Olfindo</b>, RCIC (R711813)<br>Olfindo Immigration Consulting Corporation<br>consulting@olcorp.ca<br><br>Questions about your file? Reply to your last email and we'll get back to you.</div></div>`;
+      <div class="contact"><b>Jayvee Olfindo</b>, RCIC (R711813)<br>Olfindo Immigration Consulting Corporation<br>consulting@olcorp.ca<br><br>Questions about your file? Message us through the Direct Chat with Consultant button below, or reply to your last email, and we'll get back to you.</div></div>`;
   // Bottom action buttons. Shared Folder link is per client (stored in stage_dates.folder_url);
   // its button only shows when a link is set on the file.
   let folderUrl = '';
@@ -393,6 +402,8 @@ function renderClientForm(c) {
       <p class="hint2">One item per line. Start a line with <code>[x]</code> for done, <code>[ ]</code> for pending.</p>
     </div>
 
+    <div class="sec"><label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600"><input type="checkbox" name="notify" value="on"> Notify client of this update by email (sends their secure tracker link)</label>
+      <p class="hint2">Tick this only when you want the client emailed about this change. The daily date refresh never emails.</p></div>
     <div class="sec"><button class="btn" style="max-width:240px">Save Client</button></div>
   </form>`;
   return page(editing ? ('Edit · ' + c.full_name) : 'Add Client', body);

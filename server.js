@@ -136,7 +136,7 @@ app.get('/admin/clients/:id/edit', adminAuth, (req, res) => {
   if (!c) return res.status(404).send('Client not found.');
   res.send(R.renderClientForm(c));
 });
-app.post('/admin/clients', adminAuth, (req, res) => {
+app.post('/admin/clients', adminAuth, async (req, res) => {
   const b = req.body;
   const existing = b.id ? DB.getClient(b.id) : null;
   const id = (existing && existing.id) || (b.id && b.id.trim()) || S.genId();
@@ -177,6 +177,14 @@ app.post('/admin/clients', adminAuth, (req, res) => {
     checklist: F.parseChecklist(b.checklist),
     ircc, sinp
   });
+  // Optionally email the client that their file was updated (only when ticked).
+  if (b.notify === 'on') {
+    const saved = DB.getClient(id);
+    const obj = saved ? DB.rowToObj(saved) : null;
+    if (obj && obj.client_email) {
+      try { await issueAndEmailLink(obj); } catch (e) { console.error('edit notify failed:', e.message); }
+    }
+  }
   res.redirect('/admin');
 });
 
