@@ -1,7 +1,7 @@
 // Server-side HTML rendering. On-brand with olcorp.ca (off-white, white cards,
 // green accent, mono labels, black pill buttons). Swap the text wordmark for the
 // real logo image if you like (drop a file in /public and reference it).
-const { STAGES, stagesFor, trackFor, stageIndex } = require('./stages');
+const { STAGES, ALL_STAGES, stagesFor, trackFor, stageIndex } = require('./stages');
 
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
 const safeJSON = (s, d) => { if (!s) return d; try { return JSON.parse(s); } catch (e) { return d; } };
@@ -174,6 +174,10 @@ function renderVerify({ error } = {}) {
 // application so a client who logs in with their UCI sees every pending file.
 function appTypeLabel(c) {
   const track = trackFor(c.stream);
+  if (track === 'study-permit')   return 'Study Permit';
+  if (track === 'visitor-visa')   return 'Visitor Visa';
+  if (track === 'super-visa')     return 'Super Visa';
+  if (track === 'stay-extension') return 'Stay Extension';
   if (track === 'temp-sinp' || track === 'temp') {
     const s = String(c.stream || '') + ' ' + String(c.reference || '');
     if (/study/i.test(s)) return 'Study Permit Extension';
@@ -321,9 +325,9 @@ function renderLog(entries) {
 function renderClientForm(c) {
   const editing = !!c;
   const v = (k) => c ? esc(c[k] || '') : '';
-  const stageOpts = STAGES.map(s => `<option value="${s.key}" ${c && c.current_stage === s.key ? 'selected' : ''}>${esc(s.t)}</option>`).join('');
+  const stageOpts = ALL_STAGES.map(s => `<option value="${s.key}" ${c && c.current_stage === s.key ? 'selected' : ''}>${esc(s.t)}</option>`).join('');
   let dates = {}; try { dates = JSON.parse((c && c.stage_dates) || '{}'); } catch (e) { dates = {}; }
-  const stageInputs = STAGES.map(s => `<div class="field"><label>${esc(s.t)}</label><input name="stage_${s.key}" value="${esc(dates[s.key] || '')}" placeholder="e.g. Aug 6, 2026"></div>`).join('');
+  const stageInputs = ALL_STAGES.map(s => `<div class="field"><label>${esc(s.t)}</label><input name="stage_${s.key}" value="${esc(dates[s.key] || '')}" placeholder="e.g. Aug 6, 2026"></div>`).join('');
   let checklistText = '';
   if (c) { try { checklistText = JSON.parse(c.checklist || '[]').map(k => `[${k.done ? 'x' : ' '}] ${k.label}`).join('\n'); } catch (e) {} }
   const body = `<a class="back" href="/admin">&lsaquo; Back to files</a>

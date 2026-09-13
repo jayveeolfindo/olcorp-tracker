@@ -52,17 +52,88 @@ const TEMP_STAGES = [
   { key: 'issued',   t: 'Permit Issued',                 d: 'Your new permit is issued.' }
 ];
 
+// Study Permit (new application, not an extension). Application number starts with S.
+const STUDY_STAGES = [
+  { key: 'intake',   t: 'Intake & Document Collection', d: 'We gather and verify your identity documents, letter of acceptance, proof of funds, and forms.' },
+  { key: 'submitted',t: 'Application Submitted to IRCC', d: 'Your study permit application is filed with IRCC.' },
+  { key: 'bio',      t: 'Biometrics',                    d: 'Fingerprints and photo captured at a collection point.' },
+  { key: 'medical',  t: 'Medical Exam (If Required)',    d: 'Immigration medical completed with a panel physician, if your program or length of stay requires it.' },
+  { key: 'process',  t: 'Application in Process',        d: 'IRCC reviews eligibility and admissibility.' },
+  { key: 'decision', t: 'Final Decision',                d: 'IRCC issues the decision on your application.' },
+  { key: 'issued',   t: 'Study Permit Issued',          d: 'Your study permit (or approval letter and entry document) is issued.' }
+];
+
+// Visitor Visa (Temporary Resident Visa / TRV). Application number starts with V.
+const VISITOR_VISA_STAGES = [
+  { key: 'intake',   t: 'Intake & Document Collection', d: 'We gather and verify your identity documents, purpose of travel, and proof of ties and funds.' },
+  { key: 'submitted',t: 'Application Submitted to IRCC', d: 'Your visitor visa application is filed with IRCC.' },
+  { key: 'bio',      t: 'Biometrics',                    d: 'Fingerprints and photo captured at a collection point.' },
+  { key: 'process',  t: 'Application in Process',        d: 'IRCC reviews eligibility and admissibility.' },
+  { key: 'decision', t: 'Final Decision',                d: 'IRCC issues the decision on your application.' },
+  { key: 'issued',   t: 'Visa Issued',                   d: 'Your temporary resident visa is issued in your passport.' }
+];
+
+// Super Visa (parent/grandparent long-stay visa). Medical always required. Application number starts with V.
+const SUPER_VISA_STAGES = [
+  { key: 'intake',   t: 'Intake & Document Collection', d: 'We gather and verify your identity documents, invitation, proof of funds, and insurance.' },
+  { key: 'submitted',t: 'Application Submitted to IRCC', d: 'Your super visa application is filed with IRCC.' },
+  { key: 'bio',      t: 'Biometrics',                    d: 'Fingerprints and photo captured at a collection point.' },
+  { key: 'medical',  t: 'Medical Exam',                  d: 'Immigration medical completed with a panel physician (required for the super visa).' },
+  { key: 'process',  t: 'Application in Process',        d: 'IRCC reviews eligibility and admissibility.' },
+  { key: 'decision', t: 'Final Decision',                d: 'IRCC issues the decision on your application.' },
+  { key: 'issued',   t: 'Super Visa Issued',            d: 'Your super visa is issued in your passport.' }
+];
+
+// Stay Extension Application (extend your stay as a visitor / visitor record). Application number starts with V.
+const STAY_EXT_STAGES = [
+  { key: 'intake',   t: 'Intake & Document Collection', d: 'We gather and verify your identity documents, current status, and reason for extending.' },
+  { key: 'submitted',t: 'Application Submitted to IRCC', d: 'Your application to extend your stay is filed with IRCC.' },
+  { key: 'process',  t: 'Application in Process',        d: 'IRCC reviews your request. You may remain in Canada under maintained status while it is processed.' },
+  { key: 'decision', t: 'Final Decision',                d: 'IRCC issues the decision on your application.' },
+  { key: 'issued',   t: 'Visitor Record Issued',        d: 'Your new visitor record is issued.' }
+];
+
 const TRACKS = {
   'sinp': SINP_STAGES,
   'express': EXPRESS_STAGES,
   'temp-sinp': TEMP_SINP_STAGES,
-  'temp': TEMP_STAGES
+  'temp': TEMP_STAGES,
+  'study-permit': STUDY_STAGES,
+  'visitor-visa': VISITOR_VISA_STAGES,
+  'super-visa': SUPER_VISA_STAGES,
+  'stay-extension': STAY_EXT_STAGES
 };
+
+// Union of every step across all tracks, deduped by key, in a sensible order.
+// Used by the admin form so a file on any track can set its stage and dates.
+const ALL_STAGES = [
+  { key: 'intake',   t: 'Intake & Document Collection' },
+  { key: 'sinp',     t: 'SINP Application Filed' },
+  { key: 'nom',      t: 'Provincial Nomination' },
+  { key: 'eapr',     t: 'e-APR Submitted to IRCC' },
+  { key: 'aor',      t: 'Acknowledgement of Receipt (AOR)' },
+  { key: 'support',  t: 'SINP Work Permit Support Letter' },
+  { key: 'submitted',t: 'Application Submitted to IRCC' },
+  { key: 'bio',      t: 'Biometrics' },
+  { key: 'medical',  t: 'Medical Exam' },
+  { key: 'process',  t: 'Application in Process' },
+  { key: 'bg',       t: 'Background & Security Check' },
+  { key: 'decision', t: 'Final Decision' },
+  { key: 'issued',   t: 'Permit / Visa Issued' },
+  { key: 'copr',     t: 'PR Confirmed (COPR)' }
+];
 
 // Decide which track a client uses from their stream text.
 function trackFor(stream) {
   const s = String(stream || '');
   const isSinp = /SINP/i.test(s);
+  // Distinct temporary-resident application types. Matched on specific stream
+  // phrases before the generic extension rules, so existing WP/SP/VR extension
+  // files keep their current tracks untouched.
+  if (/super\s*visa/i.test(s)) return 'super-visa';
+  if (/visitor\s*visa|temporary resident visa|\bTRV\b/i.test(s)) return 'visitor-visa';
+  if (/stay extension|extend(?:ing|ed)?\s+(?:my\s+|your\s+|the\s+)?stay/i.test(s)) return 'stay-extension';
+  if (/study permit/i.test(s) && !/extension/i.test(s)) return 'study-permit';
   const isTemp = /work permit|study permit|visitor|temporary|permit extension|\bWP\b|\bSP\b|\bVR\b/i.test(s);
   if (isTemp) return isSinp ? 'temp-sinp' : 'temp';
   return isSinp ? 'sinp' : 'express';
@@ -77,6 +148,11 @@ module.exports.SINP_STAGES = SINP_STAGES;
 module.exports.EXPRESS_STAGES = EXPRESS_STAGES;
 module.exports.TEMP_SINP_STAGES = TEMP_SINP_STAGES;
 module.exports.TEMP_STAGES = TEMP_STAGES;
+module.exports.STUDY_STAGES = STUDY_STAGES;
+module.exports.VISITOR_VISA_STAGES = VISITOR_VISA_STAGES;
+module.exports.SUPER_VISA_STAGES = SUPER_VISA_STAGES;
+module.exports.STAY_EXT_STAGES = STAY_EXT_STAGES;
+module.exports.ALL_STAGES = ALL_STAGES;
 module.exports.TRACKS = TRACKS;
 module.exports.trackFor = trackFor;
 module.exports.stagesFor = stagesFor;

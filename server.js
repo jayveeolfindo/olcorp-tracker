@@ -32,6 +32,41 @@ app.use(express.json({ limit: '1mb' }));                    // for the programma
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));   // serves /logo.png
 
+// --- Daily "Last Updated" refresh -------------------------------------------
+// Every day at 6am Saskatchewan time (America/Regina = UTC-6, no DST) every
+// active client's updated_at is stamped with today's date, so each page shows a
+// fresh "Last Updated" even on days with no status change. Self-healing: it runs
+// on boot, on a 15-minute interval, and on the first request of the day, so it
+// still fires after a restart or a Render sleep (it just runs a little late that
+// day). It only writes when a client is not already stamped today, so it is cheap
+// to call repeatedly.
+const REFRESH_HOUR_REGINA = 6;
+let lastRefreshDate = null;
+function reginaParts() {
+  const d = new Date(Date.now() - 6 * 3600 * 1000); // shift to UTC-6
+  return { date: d.toISOString().slice(0, 10), hour: d.getUTCHours() };
+}
+function refreshAllDates() {
+  const { date: today } = reginaParts();
+  try {
+    const rows = DB.listClients() || [];
+    let n = 0;
+    for (const r of rows) {
+      const o = DB.rowToObj(r);
+      if (o.updated_at !== today) { o.updated_at = today; DB.upsertClient(o); n++; }
+    }
+    lastRefreshDate = today;
+    console.log(`[daily-refresh] stamped updated_at=${today} on ${n} client(s)`);
+  } catch (e) { console.error('[daily-refresh] failed:', e.message); }
+}
+function maybeDailyRefresh() {
+  const { date: today, hour } = reginaParts();
+  if (lastRefreshDate !== today && hour >= REFRESH_HOUR_REGINA) refreshAllDates();
+}
+app.use((req, res, next) => { maybeDailyRefresh(); next(); }); // first hit of the day catches up
+setInterval(maybeDailyRefresh, 15 * 60 * 1000);
+maybeDailyRefresh(); // catch up on boot
+
 // Issue a fresh single-use link for a client; returns the full URL.
 function issueLink(c) {
   const token = S.genToken();
@@ -112,6 +147,16 @@ app.post('/admin/clients', adminAuth, (req, res) => {
     try { sinp = JSON.parse(existing.sinp || 'null'); } catch (e) {}
   }
   const stageDates = F.parseStageDates(b);
+  // Merge every milestone-date field straight from the form so steps outside the
+  // default SINP set (submitted, process, issued, support, and the new visa/study
+  // tracks) also save. Blank clears the value, matching the other date fields.
+  Object.keys(b).forEach(k => {
+    if (k.indexOf('stage_') === 0) {
+      const key = k.slice(6);
+      const v = String(b[k] || '').trim();
+      if (v) stageDates[key] = v; else delete stageDates[key];
+    }
+  });
   // Current Work Permit Expiration is stored in stage_dates (it has no milestone
   // step of its own) so it survives admin saves. Blank clears it, like the other dates.
   const wpExp = String(b.wp_expiry || '').trim();
