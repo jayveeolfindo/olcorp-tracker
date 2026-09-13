@@ -1,10 +1,14 @@
 // Server-side HTML rendering. On-brand with olcorp.ca (off-white, white cards,
 // green accent, mono labels, black pill buttons). Swap the text wordmark for the
 // real logo image if you like (drop a file in /public and reference it).
-const { STAGES, ALL_STAGES, stagesFor, trackFor, stageIndex } = require('./stages');
+const { STAGES, ALL_STAGES, stagesFor, trackFor, stageIndex, recFor } = require('./stages');
 
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
 const safeJSON = (s, d) => { if (!s) return d; try { return JSON.parse(s); } catch (e) { return d; } };
+
+// Where the "Direct Chat with Consultant" button points. One link for every client.
+// Swap this for a Messenger (m.me/...), WhatsApp (wa.me/...) or booking link any time.
+const CONSULT_CHAT_URL = 'https://www.facebook.com/jayveeolfindo';
 
 const CSS = `
 :root{--bg:#f2f2f0;--card:#fff;--card2:#fbfcfd;--ink:#0a0a0a;--dark:#161616;--muted:#5b6b78;--faint:#8a97a2;
@@ -39,6 +43,10 @@ h1{font-size:24px;font-weight:800;letter-spacing:-.5px;margin:14px 2px 6px}
 .hero .noc{font-size:12.5px;color:var(--muted)}
 .ref{font-family:var(--mono);font-size:12px;color:#41762f;background:var(--green-soft);border:1px solid #d7e6d0;padding:5px 10px;border-radius:8px;display:inline-block;margin-top:10px}
 .wpexp{font-family:var(--mono);font-size:12px;color:#33475b;background:var(--slate-soft);border:1px solid #d5dde2;padding:5px 10px;border-radius:8px;display:inline-block;margin-top:10px}
+.actionbtns{display:flex;gap:12px;flex-wrap:wrap;margin:16px 2px 0}
+.actionbtn{flex:1;min-width:200px;text-align:center;background:var(--dark);color:#fff;text-decoration:none;border-radius:999px;padding:13px 18px;font-size:13.5px;font-weight:700}
+.actionbtn:hover{opacity:.92}
+.rec{padding:15px 18px;font-size:13px;line-height:1.55;color:var(--muted)}
 .statusnow{text-align:right;min-width:180px}.statusnow .val{font-size:16px;font-weight:800;margin-top:6px}
 .seg{display:flex;gap:5px;padding:16px 22px 4px}.seg i{height:5px;border-radius:99px;flex:1;background:#e6e8e5}
 .seg i.on{background:var(--green)}.seg i.cur{background:var(--green);opacity:.55}
@@ -222,15 +230,15 @@ function appBlock(c, idx, active, ctx = {}) {
         ${c.reference ? `<div class="ref">${esc(c.reference)}</div>` : ''}
         ${wpExpiry ? `<div class="wpexp">Current Work Permit Expires · ${esc(wpExpiry)}</div>` : ''}</div>
       <div class="statusnow"><div class="mlabel">Current Status</div><div class="val">${esc(STG[ci].t)}</div>
-        <div class="noc" style="margin-top:6px">Last Updated ${esc(c.updated_at || '')}</div></div>
+        <div class="noc" style="margin-top:6px">Sync Date: Today</div></div>
     </div>
     <div class="seg">${seg}</div>
     <div class="segcap">Step ${ci + 1} Of ${STG.length} · ${pct}% Complete</div>
     <div class="steps">${steps}</div>
     ${hasEst ? '<div class="estnote">Dates shown in yellow are estimated from average processing times. They are projections to help you plan, not commitments, and actual IRCC timelines vary.</div>' : ''}
   </div>
-  <div class="card" style="margin-top:14px"><div class="panel-h" style="display:flex;justify-content:space-between;align-items:center"><span>IRCC Application Status</span>${ircc ? `<span style="font-weight:500;color:var(--faint);font-size:11px;font-family:var(--mono)">SYNCED ${esc(String(ircc.synced || '').toUpperCase())}</span>` : ''}</div>${irccHtml}</div>
-  <div class="card" style="margin-top:14px"><div class="panel-h">Document Checklist</div><ul class="check">${checks || '<li class="pend">No items yet.</li>'}</ul></div>
+  <div class="card" style="margin-top:14px"><div class="panel-h" style="display:flex;justify-content:space-between;align-items:center"><span>IRCC Application Status</span><span style="font-weight:500;color:var(--faint);font-size:11px;font-family:var(--mono)">SYNCED TODAY</span></div>${irccHtml}</div>
+  <div class="card" style="margin-top:14px"><div class="panel-h">Recommended To Do As Of This Moment</div><div class="rec">${esc(recFor(track, STG[ci].key))}</div></div>
   </div>`;
 }
 
@@ -258,6 +266,14 @@ function renderTracker(input, opts = {}) {
   const blocks = list.map((c, i) => appBlock(c, i, i === 0, { hasExtApp })).join('');
   const consultant = `<div class="card" style="margin-top:14px"><div class="panel-h">Your Consultant</div>
       <div class="contact"><b>Jayvee Olfindo</b>, RCIC (R711813)<br>Olfindo Immigration Consulting Corporation<br>consulting@olcorp.ca<br><br>Questions about your file? Reply to your last email and we'll get back to you.</div></div>`;
+  // Bottom action buttons. Shared Folder link is per client (stored in stage_dates.folder_url);
+  // its button only shows when a link is set on the file.
+  let folderUrl = '';
+  for (const c of list) { const u = safeJSON(c.stage_dates, {}).folder_url; if (u) { folderUrl = u; break; } }
+  const actions = `<div class="actionbtns">
+      <a class="actionbtn" href="${esc(CONSULT_CHAT_URL)}">Direct Chat with Consultant</a>
+      ${folderUrl ? `<a class="actionbtn" href="${esc(folderUrl)}" target="_blank" rel="noopener">Link to Shared Folder</a>` : ''}
+    </div>`;
   const script = multi
     ? `<script>(function(){var tabs=document.querySelectorAll('.apptab'),blocks=document.querySelectorAll('.appblock');tabs.forEach(function(t){t.addEventListener('click',function(){var tgt=t.getAttribute('data-target');tabs.forEach(function(x){x.classList.toggle('on',x===t);});blocks.forEach(function(b){b.style.display=(b.getAttribute('data-app')===tgt)?'':'none';});});});})();</script>`
     : '';
@@ -267,6 +283,7 @@ function renderTracker(input, opts = {}) {
   ${tabs}
   ${blocks}
   ${consultant}
+  ${actions}
   ${script}`;
   return page(`${person.full_name} · Application Tracker`, body);
 }
@@ -363,6 +380,7 @@ function renderClientForm(c) {
         <div class="field"><label>Next Action</label><input name="next_action" value="${v('next_action')}" placeholder="Biometrics Instruction Letter (BIL)"></div>
         <div class="field"><label>Last Updated</label><input name="updated_at" value="${v('updated_at')}" placeholder="YYYY-MM-DD"></div>
       </div>
+      <div class="field"><label>Shared Folder Link <span class="hint2">(client's Google Drive folder; the "Link to Shared Folder" button appears only when this is set)</span></label><input name="folder_url" value="${esc(dates.folder_url || '')}" placeholder="https://drive.google.com/..."></div>
     </div>
 
     <div class="sec"><h4>Milestone Dates <span class="hint2">(optional, shown under each step)</span></h4>

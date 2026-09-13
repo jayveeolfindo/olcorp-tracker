@@ -143,6 +143,87 @@ function stagesFor(track) {
   return TRACKS[track] || SINP_STAGES;
 }
 
+// Per-step client recommendations shown in the "Recommended To Do As Of This
+// Moment" panel. Keyed by track, then by stage key. recFor() falls back to the
+// PR track and then to a generic line.
+const DEFAULT_REC = "No action is needed from you right now. We are monitoring your file and will reach out if anything is required.";
+
+const PR_FED = {
+  eapr:    "No action needed. Your PR application is filed with IRCC. This is the longest stage, usually around six months, so please sit tight and let your consultant know if anything changes.",
+  aor:     "No action needed. IRCC has your application. Watch for a biometrics request and tell us as soon as one arrives.",
+  bio:     "Most clients receive a biometrics letter by email. If you get one, please book and complete your appointment as soon as possible. We are glad to help.",
+  medical: "If IRCC requests it by email, complete your upfront medical with a panel physician if you have not already. Otherwise, no action is needed.",
+  bg:      "No action needed. Your background and security check is underway. This is the second longest stage, so please be patient.",
+  decision:"No action needed. IRCC is finalizing your decision. Please keep your passport valid and your contact details current. We will coordinate your virtual landing and PR card photo. If you took a PR photo within the last 12 months, we can still use it; if not, please have a professional digital photo taken (digital copy only, no scanned copy, and no back details needed).",
+  copr:    "Congratulations. Please follow the landing instructions we send you to complete your PR and apply for your PR card."
+};
+
+const RECS = {
+  sinp: Object.assign({
+    intake: "Please send the documents we have asked for so we can finish preparing and filing your application.",
+    sinp:   "Your nomination application is with Saskatchewan and we are monitoring it. Please coordinate with your employer, and keep preparing the rest of your Work Permit and PR requirements from your Requirements Checklist.",
+    nom:    "Congratulations on clearing this first big step. Your Work Permit and PR are now well within reach. Please submit everything on your Requirements Checklist for the Work Permit (if applicable) and PR so we are ready to move quickly."
+  }, PR_FED),
+  express: Object.assign({
+    intake: "Please send the documents we have asked for so we can finish preparing and filing your application."
+  }, PR_FED),
+  'temp-sinp': {
+    intake:    "Please send the documents we have asked for, as listed in your Requirements Checklist, so we can finish preparing and filing your work permit application.",
+    support:   "Saskatchewan is issuing your work permit support letter. Please coordinate with your employer if we ask for anything, and keep the rest of your Requirements Checklist ready.",
+    submitted: "No action needed. Your work permit application is filed with IRCC. If your previous permit expired after we applied, you may keep working under maintained status. Please inform your consultant if anything changes.",
+    bio:       "Most clients receive a biometrics letter by email. If you get one, please book and complete your appointment as soon as possible. We are glad to help.",
+    process:   "No action needed. IRCC is reviewing your work permit application. You may continue working under maintained status if it applies to you.",
+    decision:  "No action needed. IRCC is finalizing your decision. Please keep your passport valid and your contact details current.",
+    issued:    "Your new work permit is issued. Please review it for accuracy and send us a copy so we can update your file."
+  },
+  temp: {
+    intake:    "Please send the documents we have asked for, as listed in your Requirements Checklist, so we can finish preparing and filing your permit application.",
+    submitted: "No action needed. Your permit application is filed with IRCC. If your previous permit expired after we applied, you may keep working under maintained status. Please inform your consultant if anything changes.",
+    bio:       "Most clients receive a biometrics letter by email. If you get one, please book and complete your appointment as soon as possible. We are glad to help.",
+    process:   "No action needed. IRCC is reviewing your application. You may continue under maintained status if it applies to you.",
+    decision:  "No action needed. IRCC is finalizing your decision. Please keep your passport valid and your contact details current.",
+    issued:    "Your new permit is issued. Please review it for accuracy and send us a copy so we can update your file."
+  },
+  'study-permit': {
+    intake:    "Please send the documents we have asked for, as listed in your Requirements Checklist, including your letter of acceptance and proof of funds, so we can finish preparing and filing your study permit application.",
+    submitted: "No action needed. Your study permit application is filed with IRCC. Please inform your consultant if anything changes.",
+    bio:       "Most clients receive a biometrics letter by email. If you get one, please book and complete your appointment as soon as possible. We are glad to help.",
+    medical:   "If IRCC requests it by email, complete your medical with a panel physician if you have not already. Otherwise, no action is needed.",
+    process:   "No action needed. IRCC is reviewing your study permit application.",
+    decision:  "No action needed. IRCC is finalizing your decision. Please keep your passport valid and your contact details current.",
+    issued:    "Your study permit or approval is issued. Please review the details and follow the arrival steps we send you."
+  },
+  'visitor-visa': {
+    intake:    "Please send the documents we have asked for, as listed in your Requirements Checklist, including your travel purpose and proof of funds and ties, so we can finish preparing and filing your visitor visa application.",
+    submitted: "No action needed. Your visitor visa application is filed with IRCC. Please inform your consultant if anything changes.",
+    bio:       "Most clients receive a biometrics letter by email. If you get one, please book and complete your appointment as soon as possible. We are glad to help.",
+    process:   "No action needed. IRCC is reviewing your visitor visa application.",
+    decision:  "No action needed yet. If IRCC asks for your passport, please send it to us right away so we can arrange your visa printing.",
+    issued:    "Your visa is issued. Please check the details and keep your passport safe for travel."
+  },
+  'super-visa': {
+    intake:    "Please send the documents we have asked for, as listed in your Requirements Checklist, including your invitation letter, proof of funds, and medical insurance, so we can finish preparing and filing your super visa application.",
+    submitted: "No action needed. Your super visa application is filed with IRCC. Please inform your consultant if anything changes.",
+    bio:       "Most clients receive a biometrics letter by email. If you get one, please book and complete your appointment as soon as possible. We are glad to help.",
+    medical:   "Complete your medical with a panel physician. This is required for the super visa, and we can guide you on where to go.",
+    process:   "No action needed. IRCC is reviewing your super visa application.",
+    decision:  "No action needed yet. If IRCC asks for your passport, please send it to us right away so we can arrange your visa printing.",
+    issued:    "Your super visa is issued. Please check the details and keep your passport safe for travel."
+  },
+  'stay-extension': {
+    intake:    "Please send the documents we have asked for, as listed in your Requirements Checklist, so we can finish preparing and filing your application to extend your stay.",
+    submitted: "No action needed. Your application to extend your stay is filed with IRCC. You may remain in Canada under maintained status while it is processed. Please inform your consultant if anything changes.",
+    process:   "No action needed. IRCC is reviewing your request, and you may continue under maintained status.",
+    decision:  "No action needed. IRCC is finalizing your decision. Please keep your passport valid and your contact details current.",
+    issued:    "Your new visitor record is issued. Please review it for accuracy and send us a copy so we can update your file."
+  }
+};
+
+function recFor(track, key) {
+  const t = RECS[track] || RECS.sinp;
+  return t[key] || DEFAULT_REC;
+}
+
 module.exports.STAGES = SINP_STAGES;            // backward compatibility (admin forms, seed)
 module.exports.SINP_STAGES = SINP_STAGES;
 module.exports.EXPRESS_STAGES = EXPRESS_STAGES;
@@ -156,5 +237,6 @@ module.exports.ALL_STAGES = ALL_STAGES;
 module.exports.TRACKS = TRACKS;
 module.exports.trackFor = trackFor;
 module.exports.stagesFor = stagesFor;
+module.exports.recFor = recFor;
 // stageIndex(key) works on the SINP set by default; pass a track for another set.
 module.exports.stageIndex = (key, track) => stagesFor(track).findIndex(s => s.key === key);

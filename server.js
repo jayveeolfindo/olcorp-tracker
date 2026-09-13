@@ -160,7 +160,10 @@ app.post('/admin/clients', adminAuth, (req, res) => {
   // Current Work Permit Expiration is stored in stage_dates (it has no milestone
   // step of its own) so it survives admin saves. Blank clears it, like the other dates.
   const wpExp = String(b.wp_expiry || '').trim();
-  if (wpExp) stageDates.wp_expiry = wpExp;
+  if (wpExp) stageDates.wp_expiry = wpExp; else delete stageDates.wp_expiry;
+  // Shared Folder link (per client), also kept in stage_dates. Blank clears it.
+  const folderUrl = String(b.folder_url || '').trim();
+  if (folderUrl) stageDates.folder_url = folderUrl; else delete stageDates.folder_url;
   DB.upsertClient({
     id,
     uci: b.uci, dob: String(b.dob || '').trim(), last: b.last,
