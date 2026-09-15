@@ -189,6 +189,15 @@ function renderVerify({ error } = {}) {
 // Accepts a single client object or an array of the client's applications
 // (all files that share the same UCI + DOB + last name). Shows one tab per
 // application so a client who logs in with their UCI sees every pending file.
+// Mask application / work permit numbers for client display: keep the leading
+// letter prefix (W, S, V, EP) and the last 3 digits, replace each hidden digit
+// with an asterisk. Works on a clean number or one embedded in a note.
+function maskRef(r) {
+  return String(r || '')
+    .replace(/\b([A-Za-z]{1,2})(\d{4,})\b/g, (mm, p, d) => p + '*'.repeat(d.length - 3) + d.slice(-3))
+    .replace(/\b(\d{5,})\b/g, d => '*'.repeat(d.length - 3) + d.slice(-3));
+}
+
 function appTypeLabel(c) {
   const track = trackFor(c.stream);
   if (track === 'study-permit')   return 'Study Permit';
@@ -235,8 +244,8 @@ function appBlock(c, idx, active, ctx = {}) {
   return `<div class="appblock" data-app="${idx}"${active ? '' : ' style="display:none"'}>
   <div class="card">
     <div class="hero">
-      <div><div class="mlabel">${esc(c.stream || '')}</div><h2>${esc(appTypeLabel(c))}</h2>
-        ${c.reference ? `<div class="ref">${esc(c.reference)}</div>` : ''}
+      <div><h2>${esc(appTypeLabel(c))}</h2>
+        ${c.reference ? `<div class="ref">${esc(maskRef(c.reference))}</div>` : ''}
         ${wpExpiry ? `<div class="wpexp">Current Work Permit Expires · ${esc(wpExpiry)}</div>` : ''}</div>
       <div class="statusnow"><div class="mlabel">Current Status</div><div class="val">${esc(STG[ci].t)}</div>
         <div class="noc" style="margin-top:6px">Sync Date: ${esc(fmtSync(c.updated_at))}</div></div>
