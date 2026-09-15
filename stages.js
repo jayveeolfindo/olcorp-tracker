@@ -162,7 +162,7 @@ const RECS = {
   sinp: Object.assign({
     intake: "Welcome, and thank you for trusting us with your permanent residence journey. To get started, please send the documents on your Requirements Checklist so we can finish preparing and filing your application. If anything is unclear, just reach out, we are always here to help.",
     sinp:   "Your provincial nomination application is now with Saskatchewan, and we are monitoring it closely for you. In the meantime, please stay in touch with your employer, and keep preparing the rest of your Work Permit and PR requirements from your Requirements Checklist so we are ready to move the moment your nomination comes through.",
-    nom:    "Congratulations on clearing this first big step, this is wonderful news. Your Work Permit and PR are now well within reach. To keep the momentum going, please submit everything on your Requirements Checklist for the Work Permit (if applicable) and your PR, so we are ready to move quickly on your behalf."
+    nom:    "Congratulations on your provincial nomination, this is a big step forward and your permanent residence is now well within reach. There is nothing you need to do at this moment. We are now preparing your federal permanent residence application, and our target is to file it within about a week. Please keep the rest of your Requirements Checklist ready so we can submit without delay."
   }, PR_FED),
   express: Object.assign({
     intake: "Welcome, and thank you for choosing us for your permanent residence application. To get started, please send the documents on your Requirements Checklist so we can finish preparing and filing everything for you. Any questions along the way, we are here to help."
