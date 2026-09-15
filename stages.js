@@ -149,79 +149,90 @@ function stagesFor(track) {
 const DEFAULT_REC = "No action is needed from you right now. We are monitoring your file and will reach out if anything is required.";
 
 const PR_FED = {
-  eapr:    "No action needed. Your PR application is filed with IRCC. This is the longest stage, usually around six months, so please sit tight and let your consultant know if anything changes.",
-  aor:     "No action needed. IRCC has your application. Watch for a biometrics request and tell us as soon as one arrives.",
-  bio:     "Most clients receive a biometrics letter by email. If you get one, please book and complete your appointment as soon as possible. We are glad to help.",
-  medical: "If IRCC requests it by email, complete your upfront medical with a panel physician if you have not already. Otherwise, no action is needed.",
-  bg:      "No action needed. Your background and security check is underway. This is the second longest stage, so please be patient.",
-  decision:"No action needed. IRCC is finalizing your decision. Please keep your passport valid and your contact details current. We will coordinate your virtual landing and PR card photo. If you took a PR photo within the last 12 months, we can still use it; if not, please have a professional digital photo taken (digital copy only, no scanned copy, and no back details needed).",
-  copr:    "Congratulations. Please follow the landing instructions we send you to complete your PR and apply for your PR card."
+  eapr:    "Congratulations on reaching the permanent residence stage, this is a big milestone. Your PR application is now filed with IRCC. This is the longest part of the journey, usually around six months, so please settle in and let us do the watching. There is nothing you need to do right now. Just keep us posted if your address, family situation, or passport changes.",
+  aor:     "Good news, IRCC has confirmed they have your application. There is nothing you need to do at the moment. The next thing to watch for is a biometrics request, so please tell us as soon as one arrives and we will guide you from there.",
+  bio:     "Most clients receive a biometrics letter by email asking for fingerprints and a photo. If you get one, please book and complete your appointment as soon as you can, then let us know. We are glad to walk you through where to go and what to bring.",
+  medical: "If IRCC emails you to request your medical, please complete it with an approved panel physician if you have not already. If you have not been asked, there is nothing to do for now. We are happy to help you find the nearest panel doctor.",
+  bg:      "Your background and security check is now underway. This is the second longest stage, so please be patient, it is a normal and quiet part of the process. There is nothing you need to do while it runs, and we are keeping an eye on it for you.",
+  decision:"You are almost there, and we are so close now. IRCC is finalizing your decision. Please keep your passport valid and your contact details current so nothing is delayed. We will coordinate your virtual landing and your PR card photo with you. If you had a PR photo taken within the last 12 months we can still use it; if not, please have a professional digital photo taken (a digital copy only, not a scan, and the back details are not needed). We will guide you through every step.",
+  copr:    "Congratulations, this is the moment we have all been working toward. Please follow the landing instructions we will send you to complete your permanent residence and apply for your PR card. We could not be happier for you."
 };
 
 const RECS = {
   sinp: Object.assign({
-    intake: "Please send the documents we have asked for so we can finish preparing and filing your application.",
-    sinp:   "Your nomination application is with Saskatchewan and we are monitoring it. Please coordinate with your employer, and keep preparing the rest of your Work Permit and PR requirements from your Requirements Checklist.",
-    nom:    "Congratulations on clearing this first big step. Your Work Permit and PR are now well within reach. Please submit everything on your Requirements Checklist for the Work Permit (if applicable) and PR so we are ready to move quickly."
+    intake: "Welcome, and thank you for trusting us with your permanent residence journey. To get started, please send the documents on your Requirements Checklist so we can finish preparing and filing your application. If anything is unclear, just reach out, we are always here to help.",
+    sinp:   "Your provincial nomination application is now with Saskatchewan, and we are monitoring it closely for you. In the meantime, please stay in touch with your employer, and keep preparing the rest of your Work Permit and PR requirements from your Requirements Checklist so we are ready to move the moment your nomination comes through.",
+    nom:    "Congratulations on clearing this first big step, this is wonderful news. Your Work Permit and PR are now well within reach. To keep the momentum going, please submit everything on your Requirements Checklist for the Work Permit (if applicable) and your PR, so we are ready to move quickly on your behalf."
   }, PR_FED),
   express: Object.assign({
-    intake: "Please send the documents we have asked for so we can finish preparing and filing your application."
+    intake: "Welcome, and thank you for choosing us for your permanent residence application. To get started, please send the documents on your Requirements Checklist so we can finish preparing and filing everything for you. Any questions along the way, we are here to help."
   }, PR_FED),
   'temp-sinp': {
-    intake:    "Please send the documents we have asked for, as listed in your Requirements Checklist, so we can finish preparing and filing your work permit application.",
-    support:   "Saskatchewan is issuing your work permit support letter. Please coordinate with your employer if we ask for anything, and keep the rest of your Requirements Checklist ready.",
-    submitted: "No action needed. Your work permit application is filed with IRCC. If your previous permit expired after we applied, you may keep working under maintained status. Please inform your consultant if anything changes.",
-    bio:       "Most clients receive a biometrics letter by email. If you get one, please book and complete your appointment as soon as possible. We are glad to help.",
-    process:   "No action needed. IRCC is reviewing your work permit application. You may continue working under maintained status if it applies to you.",
-    decision:  "No action needed. IRCC is finalizing your decision. Please keep your passport valid and your contact details current.",
-    issued:    "Your new work permit is issued. Please review it for accuracy and send us a copy so we can update your file."
+    intake:    "Welcome, and thank you for trusting us with your work permit. Right now we are gathering and double checking your documents. The quickest way to help is to send everything on your Requirements Checklist as soon as you can, and we will take care of the preparation and filing from there. If anything is unclear, just ask, we are always happy to help.",
+    support:   "Good progress. Saskatchewan is preparing your work permit support letter, which is an important piece of the puzzle. There is nothing you need to do at this moment. If your employer needs to confirm anything, we will reach out and guide you both through it.",
+    submitted: "Your work permit application is now safely filed with IRCC, so you can relax at this stage. If your previous permit expired after we applied, the good news is that you may keep working under maintained status while you wait. Please just keep us posted if your job, address, or travel plans change.",
+    bio:       "IRCC may email you a biometrics letter asking for your fingerprints and photo. If you receive one, please book and complete the appointment as soon as you can, then let us know. We are glad to walk you through where to go and what to bring.",
+    process:   "Your application is in IRCC's hands and being reviewed, and you may continue working under maintained status if it applies to you. There is nothing you need to do right now. These reviews take time, so thank you for your patience while we keep an eye on it for you.",
+    decision:  "You are almost there. IRCC is finalizing the decision on your work permit. Please make sure your passport stays valid and your contact details are current so nothing slows things down, and we will let you know the moment there is news.",
+    issued:    "Wonderful news, your new work permit has been issued. Please look it over carefully to make sure every detail is correct, then send us a copy so we can update your file and confirm everything is in order."
   },
   temp: {
-    intake:    "Please send the documents we have asked for, as listed in your Requirements Checklist, so we can finish preparing and filing your permit application.",
-    submitted: "No action needed. Your permit application is filed with IRCC. If your previous permit expired after we applied, you may keep working under maintained status. Please inform your consultant if anything changes.",
-    bio:       "Most clients receive a biometrics letter by email. If you get one, please book and complete your appointment as soon as possible. We are glad to help.",
-    process:   "No action needed. IRCC is reviewing your application. You may continue under maintained status if it applies to you.",
-    decision:  "No action needed. IRCC is finalizing your decision. Please keep your passport valid and your contact details current.",
-    issued:    "Your new permit is issued. Please review it for accuracy and send us a copy so we can update your file."
+    intake:    "Welcome, and thank you for choosing us to handle your application. Right now we are gathering and checking your documents. The quickest way to help is to send everything on your Requirements Checklist, and we will take care of preparing and filing it. If anything is unclear, just reach out, we are here for you.",
+    submitted: "Your application is now safely filed with IRCC, so you can relax at this stage. If your previous permit expired after we applied, you may keep working under maintained status while you wait. Please just let us know if your job, address, or travel plans change.",
+    bio:       "IRCC may email you a biometrics letter asking for your fingerprints and photo. If you receive one, please book and complete the appointment as soon as you can, then let us know. We are glad to guide you through it.",
+    process:   "Your application is being reviewed by IRCC, and you may continue under maintained status if it applies to you. There is nothing you need to do right now. Thank you for your patience while we keep watch on it for you.",
+    decision:  "You are almost there. IRCC is finalizing the decision. Please keep your passport valid and your contact details current so nothing is delayed, and we will reach out as soon as we hear.",
+    issued:    "Wonderful news, your new permit has been issued. Please review it carefully to make sure every detail is correct, then send us a copy so we can update your file."
   },
   'study-permit': {
-    intake:    "Please send the documents we have asked for, as listed in your Requirements Checklist, including your letter of acceptance and proof of funds, so we can finish preparing and filing your study permit application.",
-    submitted: "No action needed. Your study permit application is filed with IRCC. Please inform your consultant if anything changes.",
-    bio:       "Most clients receive a biometrics letter by email. If you get one, please book and complete your appointment as soon as possible. We are glad to help.",
-    medical:   "If IRCC requests it by email, complete your medical with a panel physician if you have not already. Otherwise, no action is needed.",
-    process:   "No action needed. IRCC is reviewing your study permit application.",
-    decision:  "No action needed. IRCC is finalizing your decision. Please keep your passport valid and your contact details current.",
-    issued:    "Your study permit or approval is issued. Please review the details and follow the arrival steps we send you."
+    intake:    "Welcome, and congratulations on this exciting step toward studying in Canada. To get your study permit moving, please send the items on your Requirements Checklist, especially your letter of acceptance and proof of funds. Once we have those, we will prepare and file everything for you. Any questions at all, we are here to help.",
+    submitted: "Your study permit application is filed with IRCC, nicely done. There is nothing you need to do right now, so take a breath. Please just let us know if your school plans, contact details, or travel dates change.",
+    bio:       "IRCC may send you a biometrics letter by email asking for your fingerprints and photo. If it arrives, please complete the appointment as soon as you can and tell us. We will gladly guide you on where to go and what to bring.",
+    medical:   "If IRCC emails you to ask for a medical exam, please complete it with an approved panel physician if you have not already. If you have not heard anything about a medical, there is nothing to do. We are happy to point you to the nearest panel doctor.",
+    process:   "Your study permit application is now being reviewed by IRCC, and there is nothing further needed from you at this stage. Processing can take a little time, so thank you for your patience while we monitor it for you.",
+    decision:  "You are almost at the finish line. IRCC is finalizing the decision. Please keep your passport valid and your contact details current so there are no delays, and we will reach out the moment we hear.",
+    issued:    "Congratulations, your study permit or approval has been issued. Please review the details carefully and follow the arrival and next steps we will send you. We are excited for you."
   },
   'visitor-visa': {
-    intake:    "Please send the documents we have asked for, as listed in your Requirements Checklist, including your travel purpose and proof of funds and ties, so we can finish preparing and filing your visitor visa application.",
-    submitted: "No action needed. Your visitor visa application is filed with IRCC. Please inform your consultant if anything changes.",
-    bio:       "Most clients receive a biometrics letter by email. If you get one, please book and complete your appointment as soon as possible. We are glad to help.",
-    process:   "No action needed. IRCC is reviewing your visitor visa application.",
-    decision:  "No action needed yet. If IRCC asks for your passport, please send it to us right away so we can arrange your visa printing.",
-    issued:    "Your visa is issued. Please check the details and keep your passport safe for travel."
+    intake:    "Thank you for trusting us with your visitor visa. To get started, please send the documents on your Requirements Checklist, including the purpose of your trip and your proof of funds and ties to home. Once we have everything, we will prepare and file your application for you. Reach out anytime with questions.",
+    submitted: "Your visitor visa application is filed with IRCC, all set for now. There is nothing you need to do at this stage, so please sit back and relax. Just let us know if your travel plans or contact details change.",
+    bio:       "IRCC may email you a biometrics letter for your fingerprints and photo. If you receive one, please complete the appointment as soon as you can and let us know. We are happy to help you through it.",
+    process:   "Your application is being reviewed by IRCC, and nothing is needed from you right now. Thank you for your patience while it is assessed. We are keeping watch on it for you.",
+    decision:  "Almost done. If IRCC asks for your passport so your visa can be printed, please get it to us right away and we will arrange it quickly. Otherwise, there is nothing to do but wait for the good news.",
+    issued:    "Great news, your visa has been issued. Please double check the details, and keep your passport safe and ready for your trip. Safe travels ahead."
   },
   'super-visa': {
-    intake:    "Please send the documents we have asked for, as listed in your Requirements Checklist, including your invitation letter, proof of funds, and medical insurance, so we can finish preparing and filing your super visa application.",
-    submitted: "No action needed. Your super visa application is filed with IRCC. Please inform your consultant if anything changes.",
-    bio:       "Most clients receive a biometrics letter by email. If you get one, please book and complete your appointment as soon as possible. We are glad to help.",
-    medical:   "Complete your medical with a panel physician. This is required for the super visa, and we can guide you on where to go.",
-    process:   "No action needed. IRCC is reviewing your super visa application.",
-    decision:  "No action needed yet. If IRCC asks for your passport, please send it to us right away so we can arrange your visa printing.",
-    issued:    "Your super visa is issued. Please check the details and keep your passport safe for travel."
+    intake:    "Thank you for choosing us for your super visa. To move forward, please send the items on your Requirements Checklist, including your invitation letter, proof of funds, and your medical insurance. Once we have these, we will prepare and file everything for you. We are here for any questions along the way.",
+    submitted: "Your super visa application is filed with IRCC, well done. There is nothing you need to do at this stage. Please just keep us informed if anything changes with your travel plans or contact details.",
+    bio:       "IRCC may email you a biometrics letter for your fingerprints and photo. If one arrives, please complete the appointment as soon as you can and let us know. We will gladly guide you through it.",
+    medical:   "A medical exam is required for the super visa. Please complete it with an approved panel physician, then let us know once it is done. We are happy to point you to the nearest panel doctor and explain what to expect.",
+    process:   "Your super visa application is now being reviewed by IRCC, and there is nothing further needed from you right now. Thank you for your patience while we keep an eye on it for you.",
+    decision:  "You are almost there. If IRCC asks for your passport so the visa can be printed, please send it to us right away and we will arrange it. Otherwise, simply wait for the good news.",
+    issued:    "Wonderful news, your super visa has been issued. Please review the details, and keep your passport safe and ready for your visit to Canada."
   },
   'stay-extension': {
-    intake:    "Please send the documents we have asked for, as listed in your Requirements Checklist, so we can finish preparing and filing your application to extend your stay.",
-    submitted: "No action needed. Your application to extend your stay is filed with IRCC. You may remain in Canada under maintained status while it is processed. Please inform your consultant if anything changes.",
-    process:   "No action needed. IRCC is reviewing your request, and you may continue under maintained status.",
-    decision:  "No action needed. IRCC is finalizing your decision. Please keep your passport valid and your contact details current.",
-    issued:    "Your new visitor record is issued. Please review it for accuracy and send us a copy so we can update your file."
+    intake:    "Thank you for letting us help you extend your stay in Canada. The best next step is to send the documents on your Requirements Checklist so we can prepare and file your application promptly. If anything is unclear, just reach out, we are always glad to help.",
+    submitted: "Your application to extend your stay is filed with IRCC, so you are in good hands. Because we applied before your current status ended, you may remain in Canada under maintained status while you wait. Please just let us know if anything changes.",
+    process:   "Your request is now being reviewed by IRCC, and you may continue under maintained status in the meantime. There is nothing you need to do right now. Thank you for your patience while we monitor it for you.",
+    decision:  "Almost done. IRCC is finalizing the decision on your extension. Please keep your passport valid and your contact details current so nothing is delayed, and we will let you know as soon as we hear.",
+    issued:    "Good news, your new visitor record has been issued. Please review it to make sure the details are correct, then send us a copy so we can update your file."
   }
 };
 
+// Appended to the intake step (and SINP nomination-approved step), before lodging.
+const FEES_NOTE = " To keep your filing on schedule, it also helps to set aside your IRCC government application fees ahead of time, which you can find listed in your service agreement, so we can lodge your application without delay.";
+// Appended to the post-filing waiting steps, where IRCC may occasionally email the client directly.
+const IRCC_FWD = " IRCC usually sends updates to us, but once in a while they email you directly. If you ever receive anything from IRCC, please forward it to us right away so we can guide you on it and keep your file properly tracked.";
+const FEES_KEYS = new Set(['intake', 'nom']);
+const FWD_KEYS = new Set(['eapr', 'aor', 'bg', 'submitted', 'process']);
+
 function recFor(track, key) {
   const t = RECS[track] || RECS.sinp;
-  return t[key] || DEFAULT_REC;
+  if (!t[key]) return DEFAULT_REC;
+  let s = t[key];
+  if (FEES_KEYS.has(key)) s += FEES_NOTE;
+  if (FWD_KEYS.has(key)) s += IRCC_FWD;
+  return s;
 }
 
 module.exports.STAGES = SINP_STAGES;            // backward compatibility (admin forms, seed)
