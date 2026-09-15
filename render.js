@@ -318,6 +318,7 @@ function renderAdmin(clients, archived = []) {
         <a class="abtn ghost" href="/admin/clients/${esc(c.id)}/edit">Edit</a>
         <a class="abtn ghost" href="/admin/clients/${esc(c.id)}/status">Status</a>
         <a class="abtn" href="/admin/clients/${esc(c.id)}/link">Issue link &#9656;</a>
+        ${c.client_email ? `<form method="POST" action="/admin/clients/${esc(c.id)}/welcome" style="margin:0" onsubmit="return confirm('Send the welcome email with a secure tracker link to ${esc(c.client_email)}?')"><button class="abtn ghost">Send welcome</button></form>` : ''}
         <form method="POST" action="/admin/clients/${esc(c.id)}/archive" style="margin:0"><button class="abtn ghost">Archive</button></form>
       </div>
     </div>`;

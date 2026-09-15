@@ -96,6 +96,44 @@ async function emailLink(c, link) {
 async function issueAndEmailLink(c) {
   return emailLink(c, issueLink(c));
 }
+// First-time WELCOME email: introduces the tracker and what the client can see.
+async function emailWelcome(c, link) {
+  const first = String(c.full_name || '').trim().split(/\s+/)[0] || 'there';
+  const subject = 'Welcome to your Olcorp Application Tracker';
+  const text = `Hi ${first},\n\n` +
+    `Welcome, and thank you for trusting us with your application. We have set up a private tracker page just for you, so you can follow your file's progress any time, in the very same view your representative sees on our end.\n\n` +
+    `What you can see on your tracker:\n` +
+    `- Your application timeline, with each milestone and the date it was reached\n` +
+    `- Your current status at a glance\n` +
+    `- The latest updates from IRCC as they come in\n` +
+    `- A Recommended Action for each stage, so you always know what is happening and whether anything is needed from you\n` +
+    `- Buttons to chat with us directly and to open your shared documents folder\n\n` +
+    `View my tracker:\n${link}\n\n` +
+    `Your privacy is protected. The tracker does not show any confidential details, no application or document numbers and no personal identifiers, only your milestones and their dates, so it is completely safe to open, even on a shared device.\n\n` +
+    `This is a secure, one-time link that expires in ${LINK_TTL_HOURS} hours. When you open it, you will confirm your date of birth to sign in, and after that you can return any time at ${BASE_URL.replace(/^https?:\/\//,'')}.\n\n` +
+    `If you have any questions, just reply to this email.\n\n` +
+    `Warm regards,\nOlcorp.ca Team`;
+  const html = `<div style="font-family:-apple-system,Segoe UI,Arial,sans-serif;font-size:14px;color:#0a0a0a;line-height:1.55">
+    <p>Hi ${esc(first)},</p>
+    <p>Welcome, and thank you for trusting us with your application. We have set up a private tracker page just for you, so you can follow your file's progress any time, in the very same view your representative sees on our end.</p>
+    <div style="margin:14px 0;padding:14px 16px;background:#eef4ea;border:1px solid #d7e6d0;border-radius:12px">
+      <p style="margin:0 0 8px;font-weight:600;color:#41762f;font-size:12px;letter-spacing:.04em;text-transform:uppercase">What you can see on your tracker</p>
+      <ul style="margin:0;padding-left:18px">
+        <li style="margin:5px 0">Your application timeline, with each milestone and the date it was reached</li>
+        <li style="margin:5px 0">Your current status at a glance</li>
+        <li style="margin:5px 0">The latest updates from IRCC as they come in</li>
+        <li style="margin:5px 0">A Recommended Action for each stage, so you always know what is happening and whether anything is needed from you</li>
+        <li style="margin:5px 0">Buttons to chat with us directly and to open your shared documents folder</li>
+      </ul>
+    </div>
+    <p><a href="${link}" style="display:inline-block;background:#161616;color:#fff;text-decoration:none;padding:11px 22px;border-radius:999px;font-weight:700">View my tracker</a></p>
+    <p>Your privacy is protected. The tracker does not show any confidential details, no application or document numbers and no personal identifiers, only your milestones and their dates, so it is completely safe to open, even on a shared device.</p>
+    <p style="color:#5b6b78;font-size:12.5px">This is a secure, one-time link that expires in ${LINK_TTL_HOURS} hours. When you open it, you will confirm your date of birth to sign in, and after that you can return any time at ${esc(BASE_URL.replace(/^https?:\/\//,''))}.</p>
+    <p style="color:#5b6b78;font-size:12.5px">If you have any questions, just reply to this email.</p>
+    <p style="margin-top:18px">Warm regards,<br>Olcorp.ca Team</p>
+  </div>`;
+  return M.send({ to: c.client_email, subject, text, html });
+}
 
 const ipOf = (req) => req.ip;
 const uaOf = (req) => req.get('user-agent') || '';
@@ -223,6 +261,14 @@ app.post('/admin/clients/:id/email-link', adminAuth, async (req, res) => {
   const c = DB.getClient(req.params.id);
   if (!c) return res.status(404).send('Client not found.');
   try { await issueAndEmailLink(c); } catch (e) { console.error('email-link failed:', e.message); }
+  res.redirect('/admin');
+});
+// One-click: email the first-time WELCOME message with a fresh secure link.
+app.post('/admin/clients/:id/welcome', adminAuth, async (req, res) => {
+  const c = DB.getClient(req.params.id);
+  if (!c) return res.status(404).send('Client not found.');
+  if (!c.client_email) return res.redirect('/admin');
+  try { await emailWelcome(c, issueLink(c)); } catch (e) { console.error('welcome failed:', e.message); }
   res.redirect('/admin');
 });
 
@@ -416,6 +462,17 @@ app.post('/api/clients/:id/link', apiAuth, async (req, res) => {
     try { const r = await emailLink(c, link); emailed = !!(r && r.sent); } catch (e) { console.error('api link email failed:', e.message); }
   }
   res.json({ ok: true, link, expires_hours: LINK_TTL_HOURS, emailed });
+});
+
+// Issue a link and email the first-time WELCOME message. Returns no token.
+app.post('/api/clients/:id/welcome', apiAuth, async (req, res) => {
+  const c = DB.getClient(req.params.id);
+  if (!c) return res.status(404).json({ error: 'Not found' });
+  if (!c.client_email) return res.status(400).json({ error: 'No client email on file.' });
+  let emailed = false;
+  try { const r = await emailWelcome(c, issueLink(c)); emailed = !!(r && r.sent); }
+  catch (e) { console.error('welcome email failed:', e.message); }
+  res.json({ ok: true, emailed });
 });
 
 // Archive (soft-delete) a client.
