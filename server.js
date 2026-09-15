@@ -336,6 +336,10 @@ function apiAuth(req, res, next) {
   next();
 }
 
+// Public health check (no auth) so Render can do zero-downtime deploys:
+// it keeps the current version serving until the new one passes this check.
+app.get('/healthz', (req, res) => res.status(200).send('ok'));
+
 // Health / key check.
 app.get('/api/ping', apiAuth, (req, res) => res.json({ ok: true, time: new Date().toISOString() }));
 
