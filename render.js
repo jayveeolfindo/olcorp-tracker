@@ -27,7 +27,7 @@ const CSS = `
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
 .wrap{max-width:1040px;margin:0 auto;padding:0 22px 60px}
 .topbar{display:flex;flex-direction:column;align-items:center;gap:12px;padding:20px 0}
-.brandlogo{height:60px;width:auto;display:block;background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:10px 18px;box-shadow:var(--shadow)}
+.brandlogo{height:120px;width:auto;display:block;background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:20px 36px;box-shadow:var(--shadow)}
 .div{color:var(--faint);font-size:13px}
 .mlabel{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:1.2px;color:var(--green);text-transform:uppercase}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
