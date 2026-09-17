@@ -153,6 +153,36 @@ function appsForPerson(c) {
   } catch (e) { return [c]; }
 }
 
+// Normalize an invoice number (typed by a client or stored on the file) for
+// comparison: uppercase and strip everything that is not a letter or digit, so
+// "INV-1042", "inv 1042" and "INV1042" all match. Returns '' for blank/missing,
+// so a blank stored value can never be matched (the guard below also blocks it).
+function normInvoice(s) {
+  return String(s == null ? '' : s).toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+function invoiceNoOf(row) {
+  try { const d = JSON.parse(row.stage_dates || '{}'); return normInvoice(d && d.invoice_no); }
+  catch (e) { return ''; }
+}
+
+// Manual-login match: UCI + DOB + First Invoice Number (stored per file). Last
+// name is deliberately NOT a login key, since UCI, DOB and last name all appear
+// on the work permit; the first invoice number is the piece only the client and
+// our office know. A file with no invoice number on record cannot be matched here.
+function findByInvoiceCreds(uciIn, dobIn, invIn) {
+  const uci = String(uciIn || '').replace(/\D/g, '');
+  const dob = S.normDob(dobIn);
+  const inv = normInvoice(invIn);
+  if (!uci || !dob || !inv) return null;
+  const all = DB.listClients() || [];
+  return all.find(x =>
+    String(x.uci_norm || '').replace(/\D/g, '') === uci &&
+    String(x.dob) === dob &&
+    invoiceNoOf(x) === inv
+  ) || null;
+}
+
 // ---------- admin (staff) basic auth ----------
 function adminAuth(req, res, next) {
   const h = req.get('authorization') || '';
@@ -202,6 +232,9 @@ app.post('/admin/clients', adminAuth, async (req, res) => {
   // Shared Folder link (per client), also kept in stage_dates. Blank clears it.
   const folderUrl = String(b.folder_url || '').trim();
   if (folderUrl) stageDates.folder_url = folderUrl; else delete stageDates.folder_url;
+  // First invoice number (a login key), also kept in stage_dates. Blank clears it.
+  const invoiceNo = String(b.invoice_no || '').trim();
+  if (invoiceNo) stageDates.invoice_no = invoiceNo; else delete stageDates.invoice_no;
   DB.upsertClient({
     id,
     uci: b.uci, dob: String(b.dob || '').trim(), last: b.last,
@@ -334,7 +367,7 @@ app.post('/login', (req, res) => {
     DB.log(null, ipOf(req), uaOf(req), 'manual', 'locked');
     return res.send(R.renderLogin({ locked: true, error: 'Too many unsuccessful attempts. For your security, access is temporarily locked. Please contact consulting@olcorp.ca.' }));
   }
-  const c = DB.findByCreds(req.body.uci, req.body.dob, req.body.last);
+  const c = findByInvoiceCreds(req.body.uci, req.body.dob, req.body.inv);
   if (c) {
     const sid = S.genSession();
     DB.createSession(sid, c.id, /*confirmed*/ true, SESSION_MS, ipOf(req), uaOf(req));  // manual login is fully confirmed
@@ -343,7 +376,7 @@ app.post('/login', (req, res) => {
     return res.redirect('/');
   }
   DB.log(null, ipOf(req), uaOf(req), 'manual', 'fail');
-  res.send(R.renderLogin({ error: `Those details don't match a file. Check the UCI, date of birth, and last name exactly as shown on your IRCC documents. (${r.remaining} attempt${r.remaining === 1 ? '' : 's'} remaining)` }));
+  res.send(R.renderLogin({ error: `Those details don't match a file. Check the UCI and date of birth exactly as shown on your IRCC documents, and the number on your first invoice from us. If you are not sure of that number, contact consulting@olcorp.ca. (${r.remaining} attempt${r.remaining === 1 ? '' : 's'} remaining)` }));
 });
 
 // ---------- the tracker (or login / verify, by session state) ----------
@@ -351,7 +384,7 @@ app.get('/', (req, res) => {
   const s = DB.getSession(req.cookies[COOKIE]);
   if (!s) {
     const err = req.query.e === 'link'
-      ? 'That secure link has expired or was already used. Sign in with your UCI, date of birth, and last name — or ask your consultant to resend the link.'
+      ? 'That secure link has expired or was already used. Sign in with your UCI, date of birth, and First Invoice Number — or ask your consultant to resend the link.'
       : null;
     return res.send(R.renderLogin({ error: err }));
   }

@@ -142,13 +142,13 @@ ${body}
 </div></body></html>`;
 }
 
-// ---- client login (manual: UCI + DOB + last name) ----
+// ---- client login (manual: UCI + DOB + representation start date) ----
 function renderLogin({ error, locked } = {}) {
   const body = `
   <div class="card gate">
     <div class="mlabel">Secure Access</div>
     <h3>View Your Application</h3>
-    <p>Enter the <strong>principal applicant's</strong> details exactly as they appear on your IRCC documents.</p>
+    <p>Enter the <strong>principal applicant's</strong> details exactly as they appear on your IRCC documents and your service agreement with us.</p>
     ${error ? `<div class="err">${esc(error)}</div>` : ''}
     <form method="POST" action="/login" ${locked ? 'style="opacity:.5;pointer-events:none"' : ''}>
       <div class="field"><label>UCI (Unique Client Identifier)</label>
@@ -156,13 +156,14 @@ function renderLogin({ error, locked } = {}) {
         <div class="hint">8 or 10 digits, dashes optional.</div></div>
       <div class="field"><label>Date of Birth</label>
         <input name="dob" inputmode="numeric" autocomplete="off" placeholder="YYYY-MM-DD" maxlength="10"></div>
-      <div class="field"><label>Principal Applicant's Last Name</label>
-        <input name="last" autocomplete="off" placeholder="Family name"></div>
+      <div class="field"><label>First Invoice Number</label>
+        <input name="inv" autocomplete="off" placeholder="e.g. 1042">
+        <div class="hint">The number on your first invoice from us.</div></div>
       <button class="btn" ${locked ? 'disabled' : ''}>View My Application</button>
     </form>
   </div>
   <p class="note">This page shows only your own file. Your details are verified securely and are never included in the page address.</p>
-  <script>document.querySelector('[name=dob]').addEventListener('input',function(e){var d=e.target.value.replace(/\\D/g,'').slice(0,8);var o=d.slice(0,4);if(d.length>4)o+='-'+d.slice(4,6);if(d.length>6)o+='-'+d.slice(6,8);e.target.value=o;});</script>`;
+  <script>var dobEl=document.querySelector('[name=dob]');if(dobEl)dobEl.addEventListener('input',function(e){var d=e.target.value.replace(/\\D/g,'').slice(0,8);var o=d.slice(0,4);if(d.length>4)o+='-'+d.slice(4,6);if(d.length>6)o+='-'+d.slice(6,8);e.target.value=o;});</script>`;
   return page('Sign In · Client Application Tracker', body);
 }
 
@@ -370,7 +371,7 @@ function renderClientForm(c) {
   <form class="card form" method="POST" action="/admin/clients">
     <input type="hidden" name="id" value="${editing ? esc(c.id) : ''}">
     <h1>${editing ? 'Edit Client' : 'Add Client'}</h1>
-    <p class="sub">${editing ? esc(c.full_name) : 'The login keys are UCI, date of birth, and the principal applicant&rsquo;s last name.'}</p>
+    <p class="sub">${editing ? esc(c.full_name) : 'The login keys are UCI, date of birth, and the First Invoice Number (set below). Last name is kept for the record and to group a person&rsquo;s files.'}</p>
 
     <div class="sec"><h4>Identity &amp; Login</h4>
       <div class="field"><label>Full Name</label><input name="full_name" value="${v('full_name')}" required></div>
@@ -380,6 +381,7 @@ function renderClientForm(c) {
       </div>
       <div class="field"><label>Principal Applicant&rsquo;s Last Name</label><input name="last" value="${editing ? esc(c.last_norm) : ''}" required></div>
       <div class="field"><label>Client Email <span class="hint2">(for update notifications, optional)</span></label><input name="client_email" type="email" value="${editing ? esc(c.client_email || '') : ''}" placeholder="client@example.com"></div>
+      <div class="field"><label>First Invoice Number <span class="hint2">(login key; exactly as it appears on the client&rsquo;s first invoice)</span></label><input name="invoice_no" value="${esc(dates.invoice_no || '')}" placeholder="e.g. 1042"></div>
     </div>
 
     <div class="sec"><h4>File Details</h4>
