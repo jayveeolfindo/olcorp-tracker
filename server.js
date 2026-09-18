@@ -135,6 +135,25 @@ async function emailWelcome(c, link) {
   return M.send({ to: c.client_email, subject, text, html });
 }
 
+// Saskatchewan-local date label, e.g. "Sep 18, 2026".
+function todayLabel() {
+  return new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'America/Regina' });
+}
+
+// Record that a welcome email was sent for this client (stored in stage_dates
+// so it survives without a schema change; shown as a checkmark in the admin list).
+function markWelcomeSent(c) {
+  try {
+    const obj = DB.rowToObj(c);
+    let sd = obj.stage_dates;
+    if (typeof sd === 'string') { try { sd = JSON.parse(sd || '{}'); } catch (e) { sd = {}; } }
+    sd = sd || {};
+    sd.welcome_sent = todayLabel();
+    obj.stage_dates = sd;
+    DB.upsertClient(obj);
+  } catch (e) { console.error('markWelcomeSent failed:', e.message); }
+}
+
 const ipOf = (req) => req.ip;
 const uaOf = (req) => req.get('user-agent') || '';
 function setSessionCookie(res, id) {
@@ -235,6 +254,9 @@ app.post('/admin/clients', adminAuth, async (req, res) => {
   // First invoice number (a login key), also kept in stage_dates. Blank clears it.
   const invoiceNo = String(b.invoice_no || '').trim();
   if (invoiceNo) stageDates.invoice_no = invoiceNo; else delete stageDates.invoice_no;
+  // Preserve the "welcome sent" stamp across edits (it has no form field, so it
+  // would otherwise be dropped when stage_dates is rebuilt on save).
+  if (existing) { try { const prevSd = JSON.parse(existing.stage_dates || '{}'); if (prevSd.welcome_sent) stageDates.welcome_sent = prevSd.welcome_sent; } catch (e) {} }
   DB.upsertClient({
     id,
     uci: b.uci, dob: String(b.dob || '').trim(), last: b.last,
@@ -301,7 +323,7 @@ app.post('/admin/clients/:id/welcome', adminAuth, async (req, res) => {
   const c = DB.getClient(req.params.id);
   if (!c) return res.status(404).send('Client not found.');
   if (!c.client_email) return res.redirect('/admin');
-  try { await emailWelcome(c, issueLink(c)); } catch (e) { console.error('welcome failed:', e.message); }
+  try { const r = await emailWelcome(c, issueLink(c)); if (!r || r.sent !== false) markWelcomeSent(c); } catch (e) { console.error('welcome failed:', e.message); }
   res.redirect('/admin');
 });
 
@@ -503,7 +525,7 @@ app.post('/api/clients/:id/welcome', apiAuth, async (req, res) => {
   if (!c) return res.status(404).json({ error: 'Not found' });
   if (!c.client_email) return res.status(400).json({ error: 'No client email on file.' });
   let emailed = false;
-  try { const r = await emailWelcome(c, issueLink(c)); emailed = !!(r && r.sent); }
+  try { const r = await emailWelcome(c, issueLink(c)); emailed = !!(r && r.sent); if (emailed) markWelcomeSent(c); }
   catch (e) { console.error('welcome email failed:', e.message); }
   res.json({ ok: true, emailed });
 });

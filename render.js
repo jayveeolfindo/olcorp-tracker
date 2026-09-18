@@ -95,6 +95,7 @@ a.back{color:var(--muted);font-size:12.5px;text-decoration:none}
 .imd{font-family:var(--mono);font-size:10.5px;color:var(--green);white-space:nowrap;padding-top:2px}.imt{color:var(--ink)}
 .actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .abtn.ghost{background:#fff;color:var(--muted);border:1.5px solid var(--line)}
+.wsent{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:700;color:#41762f;background:#eef4ea;border:1.5px solid #d7e6d0;border-radius:999px;padding:8px 14px}
 .form{max-width:680px;margin:0 auto;padding:26px}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:600px){.row2{grid-template-columns:1fr}}
 textarea{width:100%;font-family:var(--sans);font-size:13px;line-height:1.5;border:1.5px solid var(--line);border-radius:10px;padding:11px 12px;outline:none;min-height:96px;resize:vertical}
@@ -311,6 +312,17 @@ function renderTracker(input, opts = {}) {
 function renderAdmin(clients, archived = []) {
   const rows = clients.map(c => {
     const st = stagesFor(trackFor(c.stream))[stageIndex(c.current_stage, trackFor(c.stream))];
+    let sd = {}; try { sd = JSON.parse(c.stage_dates || '{}'); } catch (e) { sd = {}; }
+    const wsent = sd.welcome_sent;
+    let welcomeCell;
+    if (!c.client_email) {
+      welcomeCell = `<span class="abtn ghost" style="opacity:.55;cursor:default" title="Add a client email on the Edit screen to send a welcome">Send welcome</span>`;
+    } else if (wsent) {
+      welcomeCell = `<span class="wsent" title="Welcome email sent ${esc(wsent)}">&#10003; Welcome sent &middot; ${esc(wsent)}</span>`
+        + `<form method="POST" action="/admin/clients/${esc(c.id)}/welcome" style="margin:0" onsubmit="return confirm('Resend the welcome email with a fresh secure tracker link to ${esc(c.client_email)}?')"><button class="abtn ghost">Resend</button></form>`;
+    } else {
+      welcomeCell = `<form method="POST" action="/admin/clients/${esc(c.id)}/welcome" style="margin:0" onsubmit="return confirm('Send the welcome email with a secure tracker link to ${esc(c.client_email)}?')"><button class="abtn ghost">Send welcome</button></form>`;
+    }
     return `<div class="arow">
       <div><div class="aname">${esc(c.full_name)}</div><div class="ameta">${esc(c.noc || '')}</div></div>
       <div><div class="ameta">${esc(st ? st.t : c.current_stage)}</div><div class="ameta">${esc(c.status_label || '')}</div></div>
@@ -319,7 +331,7 @@ function renderAdmin(clients, archived = []) {
         <a class="abtn ghost" href="/admin/clients/${esc(c.id)}/edit">Edit</a>
         <a class="abtn ghost" href="/admin/clients/${esc(c.id)}/status">Status</a>
         <a class="abtn" href="/admin/clients/${esc(c.id)}/link">Issue link &#9656;</a>
-        ${c.client_email ? `<form method="POST" action="/admin/clients/${esc(c.id)}/welcome" style="margin:0" onsubmit="return confirm('Send the welcome email with a secure tracker link to ${esc(c.client_email)}?')"><button class="abtn ghost">Send welcome</button></form>` : ''}
+        ${welcomeCell}
         <form method="POST" action="/admin/clients/${esc(c.id)}/archive" style="margin:0"><button class="abtn ghost">Archive</button></form>
       </div>
     </div>`;
