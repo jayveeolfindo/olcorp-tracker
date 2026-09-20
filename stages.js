@@ -98,7 +98,9 @@ const TRACKS = {
   'express': EXPRESS_STAGES,
   'temp-sinp': TEMP_SINP_STAGES,
   'temp': TEMP_STAGES,
+  'temp-outside': TEMP_STAGES,
   'study-permit': STUDY_STAGES,
+  'study-outside': STUDY_STAGES,
   'visitor-visa': VISITOR_VISA_STAGES,
   'super-visa': SUPER_VISA_STAGES,
   'stay-extension': STAY_EXT_STAGES
@@ -127,15 +129,19 @@ const ALL_STAGES = [
 function trackFor(stream) {
   const s = String(stream || '');
   const isSinp = /SINP/i.test(s);
+  // Applications filed from outside Canada get their own recommendation wording,
+  // since maintained status and "continue working" language does not apply to a
+  // foreign national who is still abroad. Marked by "outside Canada" in the stream.
+  const isOutside = /outside\s+(?:of\s+)?canada|\(outside\)/i.test(s);
   // Distinct temporary-resident application types. Matched on specific stream
   // phrases before the generic extension rules, so existing WP/SP/VR extension
   // files keep their current tracks untouched.
   if (/super\s*visa/i.test(s)) return 'super-visa';
   if (/visitor\s*visa|temporary resident visa|\bTRV\b/i.test(s)) return 'visitor-visa';
   if (/stay extension|extend(?:ing|ed)?\s+(?:my\s+|your\s+|the\s+)?stay/i.test(s)) return 'stay-extension';
-  if (/study permit/i.test(s) && !/extension/i.test(s)) return 'study-permit';
+  if (/study permit/i.test(s) && !/extension/i.test(s)) return isOutside ? 'study-outside' : 'study-permit';
   const isTemp = /work permit|study permit|visitor|temporary|permit extension|\bWP\b|\bSP\b|\bVR\b/i.test(s);
-  if (isTemp) return isSinp ? 'temp-sinp' : 'temp';
+  if (isTemp) return isSinp ? 'temp-sinp' : (isOutside ? 'temp-outside' : 'temp');
   return isSinp ? 'sinp' : 'express';
 }
 
@@ -216,6 +222,26 @@ const RECS = {
     process:   "Your request is now being reviewed by IRCC, and you may continue under maintained status in the meantime. There is nothing you need to do right now. Thank you for your patience while we monitor it for you.",
     decision:  "Almost done. IRCC is finalizing the decision on your extension. Please keep your passport valid and your contact details current so nothing is delayed, and we will let you know as soon as we hear.",
     issued:    "Good news, your new visitor record has been issued. Please review it to make sure the details are correct, then send us a copy so we can update your file."
+  },
+  // Work permit filed from outside Canada. No maintained status or "keep working"
+  // language, since the applicant is still abroad and has no Canadian status yet.
+  'temp-outside': {
+    intake:    "Welcome, and thank you for trusting us with your work permit application. Right now we are gathering and double checking your documents. The quickest way to help is to send everything on your Requirements Checklist as soon as you can, and we will take care of the preparation and filing from there. If anything is unclear, just ask, we are always happy to help.",
+    submitted: "Your work permit application has been filed with IRCC, so you can relax at this stage. There is nothing you need to do right now. Please keep your passport valid, since IRCC may ask for it later to finalize your document, and let us know if your contact details or plans change.",
+    bio:       "If IRCC emails you a biometrics letter, please book and give your fingerprints and photo at your nearest Visa Application Centre as soon as you can, then let us know. We are glad to guide you on where to go and what to bring.",
+    process:   "Your application is being reviewed by IRCC. There is nothing you need to do right now. Please keep your passport valid and your contact details current, and if IRCC asks for your passport or any document we will guide you through it. Thank you for your patience while we keep watch on it for you.",
+    decision:  "You are almost there. IRCC is finalizing the decision on your work permit. Please keep your passport valid and ready, since it may be requested so your document or entry visa can be issued, and we will reach out the moment we hear.",
+    issued:    "Wonderful news, your work permit has been approved. IRCC will issue your Port of Entry Letter of Introduction, and your entry visa if one is required. Please send us a copy so we can review everything and guide you on your travel and arrival in Canada."
+  },
+  // Study permit filed from outside Canada. Same principle: no in-Canada status wording.
+  'study-outside': {
+    intake:    "Welcome, and congratulations on this exciting step toward studying in Canada. To get your study permit moving, please send the items on your Requirements Checklist, especially your letter of acceptance and proof of funds. Once we have those, we will prepare and file everything for you. Any questions at all, we are here to help.",
+    submitted: "Your study permit application has been filed with IRCC, nicely done. There is nothing you need to do right now. Please keep your passport valid, since IRCC may ask for it later to finalize your document, and let us know if your school plans or contact details change.",
+    bio:       "If IRCC emails you a biometrics letter, please give your fingerprints and photo at your nearest Visa Application Centre as soon as you can, then let us know. We will gladly guide you on where to go and what to bring.",
+    medical:   "If IRCC asks for a medical exam, please complete it with an approved panel physician. If you have not been asked, there is nothing to do for now. We are happy to point you to the nearest panel doctor.",
+    process:   "Your study permit application is being reviewed by IRCC, and there is nothing further needed from you at this stage. Please keep your passport valid and your contact details current, and if IRCC requests your passport or any document we will guide you. Thank you for your patience while we monitor it for you.",
+    decision:  "You are almost at the finish line. IRCC is finalizing the decision on your study permit. Please keep your passport valid and ready, since it may be requested so your document or entry visa can be issued, and we will reach out the moment we hear.",
+    issued:    "Congratulations, your study permit has been approved. IRCC will issue your Port of Entry Letter of Introduction, and your entry visa if one is required. Please send us a copy and follow the arrival and next steps we will send you. We are excited for you."
   }
 };
 
