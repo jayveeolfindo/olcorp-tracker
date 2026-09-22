@@ -252,7 +252,14 @@ const IRCC_FWD = " IRCC usually sends updates to us, but once in a while they em
 const FEES_KEYS = new Set(['intake', 'nom']);
 const FWD_KEYS = new Set(['eapr', 'aor', 'bg', 'submitted', 'process']);
 
+// Neutral holding message shown when a final decision has landed but we do not
+// want the client to read the outcome from the tracker before we have spoken with
+// them (for example a refusal, or any decision we need to walk them through). It
+// never states the outcome; it asks them to contact the office.
+const HOLD_REC = "A final decision has been made on your application. Please contact our office at your earliest convenience so we can review the decision with you in detail and go over your options for next steps. We are here to support you.";
+
 function recFor(track, key) {
+  if (key === 'hold') return HOLD_REC;
   const t = RECS[track] || RECS.sinp;
   if (!t[key]) return DEFAULT_REC;
   let s = t[key];

@@ -218,8 +218,13 @@ function appTypeLabel(c) {
 function appBlock(c, idx, active, ctx = {}) {
   const track = trackFor(c.stream);
   const STG = stagesFor(track);
+  // 'hold' is a neutral "final decision received, please contact our office" state.
+  // It does not exist in any track's step list, so anchor the progress at the
+  // Final Decision step and override the status label and recommendation below.
+  const onHold = c.current_stage === 'hold';
   let ci = stageIndex(c.current_stage, track);
-  if (ci < 0) ci = 0;
+  if (onHold) { const di = STG.findIndex(s => s.key === 'decision'); ci = di >= 0 ? di : STG.length - 1; }
+  else if (ci < 0) ci = 0;
   const dates = safeJSON(c.stage_dates, {});
   // On a PR file, when the client has NO separate work/study/visitor extension
   // application on the tracker, surface their current work permit expiration here.
@@ -249,7 +254,7 @@ function appBlock(c, idx, active, ctx = {}) {
       <div><h2>${esc(appTypeLabel(c))}</h2>
         ${c.reference ? `<div class="ref">${esc(maskRef(c.reference))}</div>` : ''}
         ${wpExpiry ? `<div class="wpexp">Current Work Permit Expires · ${esc(wpExpiry)}</div>` : ''}</div>
-      <div class="statusnow"><div class="mlabel">Current Status</div><div class="val">${esc(STG[ci].t)}</div>
+      <div class="statusnow"><div class="mlabel">Current Status</div><div class="val">${esc(onHold ? 'Final Decision Received' : STG[ci].t)}</div>
         <div class="noc" style="margin-top:6px">Sync Date: ${esc(fmtSync(c.updated_at))}</div></div>
     </div>
     <div class="seg">${seg}</div>
@@ -258,7 +263,7 @@ function appBlock(c, idx, active, ctx = {}) {
     ${hasEst ? '<div class="estnote">Dates shown in yellow are estimated from average processing times. They are projections to help you plan, not commitments, and actual IRCC timelines vary.</div>' : ''}
   </div>
   <div class="card" style="margin-top:14px"><div class="panel-h" style="display:flex;justify-content:space-between;align-items:center"><span>IRCC Application Status</span><span style="font-weight:500;color:var(--faint);font-size:11px;font-family:var(--mono)">SYNCED ${esc(fmtSync(c.updated_at))}</span></div>${irccHtml}</div>
-  <div class="card" style="margin-top:14px"><div class="panel-h">Recommended Action</div><div class="rec">${esc(recFor(track, STG[ci].key))}</div></div>
+  <div class="card" style="margin-top:14px"><div class="panel-h">Recommended Action</div><div class="rec">${esc(recFor(track, onHold ? 'hold' : STG[ci].key))}</div></div>
   </div>`;
 }
 
@@ -316,16 +321,16 @@ function renderAdmin(clients, archived = []) {
     const wsent = sd.welcome_sent;
     let welcomeCell;
     if (!c.client_email) {
-      welcomeCell = `<span class="abtn ghost" style="opacity:.55;cursor:default" title="Add a client email on the Edit screen to send a welcome">Send welcome</span>`;
+      welcomeCell = `<span class="abtn ghost" style="opacity:.5;cursor:not-allowed" title="No client email on file. Add one on the Edit screen to send a welcome.">Send welcome (no email)</span>`;
     } else if (wsent) {
       welcomeCell = `<span class="wsent" title="Welcome email sent ${esc(wsent)}">&#10003; Welcome sent &middot; ${esc(wsent)}</span>`
         + `<form method="POST" action="/admin/clients/${esc(c.id)}/welcome" style="margin:0" onsubmit="return confirm('Resend the welcome email with a fresh secure tracker link to ${esc(c.client_email)}?')"><button class="abtn ghost">Resend</button></form>`;
     } else {
-      welcomeCell = `<form method="POST" action="/admin/clients/${esc(c.id)}/welcome" style="margin:0" onsubmit="return confirm('Send the welcome email with a secure tracker link to ${esc(c.client_email)}?')"><button class="abtn ghost">Send welcome</button></form>`;
+      welcomeCell = `<form method="POST" action="/admin/clients/${esc(c.id)}/welcome" style="margin:0" onsubmit="return confirm('Send the welcome email with a secure tracker link to ${esc(c.client_email)}?')"><button class="abtn">Send welcome</button></form>`;
     }
     return `<div class="arow">
       <div><div class="aname">${esc(c.full_name)}</div><div class="ameta">${esc(c.noc || '')}</div></div>
-      <div><div class="ameta">${esc(st ? st.t : c.current_stage)}</div><div class="ameta">${esc(c.status_label || '')}</div></div>
+      <div><div class="ameta">${esc(st ? st.t : (c.current_stage === 'hold' ? 'Final Decision Received (On Hold)' : c.current_stage))}</div><div class="ameta">${esc(c.status_label || '')}</div></div>
       <div class="actions">
         <a class="abtn ghost" href="/admin/clients/${esc(c.id)}/preview">View as client</a>
         <a class="abtn ghost" href="/admin/clients/${esc(c.id)}/edit">Edit</a>
