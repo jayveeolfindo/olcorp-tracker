@@ -238,7 +238,21 @@ function appBlock(c, idx, active, ctx = {}) {
     const cls = i < ci ? 'done' : (i === ci ? 'current' : 'pending');
     const inner = i < ci ? '&#10003;' : (i + 1);
     const dv = dates[s.key];
-    const when = dv ? `<div class="when${isEstV(dv) ? ' est' : ''}">${esc(dv)}</div>` : (i === ci ? '<div class="when">In Progress</div>' : '');
+    // The Final Decision step, while it is the current step and the file is not a
+    // refusal hold, must always read "In Progress", never a stored green date. A
+    // dated green Final Decision reads to the client as a finalized decision, which
+    // is the opposite of the neutral in-progress state we want until COPR.
+    const decisionInProgress = (i === ci) && s.key === 'decision' && !onHold;
+    let when;
+    if (decisionInProgress) {
+      when = '<div class="when">In Progress</div>';
+    } else if (dv) {
+      when = `<div class="when${isEstV(dv) ? ' est' : ''}">${esc(dv)}</div>`;
+    } else if (i === ci) {
+      when = '<div class="when">In Progress</div>';
+    } else {
+      when = '';
+    }
     return `<div class="step ${cls}"><div class="node">${inner}</div><div><div class="t">${esc(s.t)}</div><div class="d">${esc(s.d)}</div>${when}</div></div>`;
   }).join('');
   const hasEst = STG.some(s => isEstV(dates[s.key]));
