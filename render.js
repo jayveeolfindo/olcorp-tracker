@@ -215,6 +215,84 @@ function appTypeLabel(c) {
   return 'Permanent Residence';
 }
 
+// Reconcile the frozen IRCC panel (captured at the last portal sync) against the
+// live stage, so the panel can never lag behind the timeline. A manual stage
+// advance (e.g. marking biometrics done) moves the timeline immediately; this
+// keeps the IRCC status rows and the latest-update line consistent with it,
+// instead of still showing, say, "AOR Pending" after the AOR has landed.
+// Rules: the AOR row and the summary follow the stage; the Final Decision row
+// only reads "In Progress" when IRCC actually has a dated entry for it (else
+// "Not Started"); the stale "awaiting AOR" note is dropped once AOR is in, and
+// synthesized while it is genuinely still pending.
+function reconcileIrcc(ircc, STG, ci, dates) {
+  const idxOf = key => STG.findIndex(s => s.key === key);
+  const aorIdx = idxOf('aor'), decIdx = idxOf('decision'), eaprIdx = idxOf('eapr');
+  const past = key => { const i = idxOf(key); return i >= 0 && ci >= i; };
+  const norm = s => String(s || '').toLowerCase();
+  const looksDone = v => /pass|complete|received|approved|\bmet\b|issued|done/i.test(String(v));
+  const milestoneKey = label => {
+    const l = norm(label);
+    if (/acknowledgement of receipt|\baor\b/.test(l)) return 'aor';
+    if (/biometric/.test(l)) return 'bio';
+    if (/medical/.test(l)) return 'medical';
+    if (/background/.test(l)) return 'bg';
+    if (/final decision/.test(l)) return 'decision';
+    return null;
+  };
+  const awaitingRe = /awaiting acknowledgement|awaiting aor|aor[^a-z]{0,12}pending/i;
+  const submittedRe = /submitted in the ircc pr portal/i;
+
+  // No synced panel: synthesize a minimal one once the e-APR has been filed.
+  if (!ircc) {
+    if (eaprIdx >= 0 && ci >= eaprIdx) ircc = { rows: [], messages: [] };
+    else return null;
+  }
+
+  const finMsg = (ircc.messages || []).find(m => /final decision/i.test(m.text || ''));
+  const finDate = finMsg ? finMsg.date
+    : (dates.decision && !/^\s*est/i.test(String(dates.decision)) ? dates.decision : '');
+  const aorVal = () => dates.aor ? ('Received · ' + dates.aor) : 'Received';
+
+  let rows = (ircc.rows || []).map(r => {
+    const label = r[0], value = r[1], state = r[2] || '', l = norm(label);
+    if (/application status/.test(l)) {
+      if (past('aor') && /aor pending|awaiting|not .*acknowledg/i.test(value))
+        return [label, 'We Are Processing Your Application', 'prog'];
+      return r;
+    }
+    const mk = milestoneKey(label);
+    if (!mk) return r; // leave eligibility and other real detail rows untouched
+    if (mk === 'decision') {
+      if (past('decision')) return [label, 'In Progress', 'prog'];
+      return finDate ? [label, 'In Progress · ' + finDate, 'prog'] : [label, 'Not Started', 'wait'];
+    }
+    if (mk === 'aor') return past('aor') ? [label, aorVal(), 'done'] : [label, 'Pending', 'wait'];
+    const mi = idxOf(mk);
+    if (mi < 0) return r;
+    if (ci > mi) return looksDone(value) ? r : [label, 'Completed', 'done'];
+    if (ci === mi) return looksDone(value) ? r : [label, 'In Progress', 'prog'];
+    return [label, 'Not Started', 'wait']; // step not reached yet
+  });
+
+  // If there is no synced panel body at all, build the AOR summary from the stage.
+  if (!rows.length && eaprIdx >= 0 && ci >= eaprIdx) {
+    const aorDone = past('aor');
+    rows = [
+      ['Application Status', aorDone ? 'We Are Processing Your Application' : 'e-APR Submitted, AOR Pending', 'prog'],
+      ['Acknowledgement of Receipt (AOR)', aorDone ? aorVal() : 'Pending', aorDone ? 'done' : 'wait']
+    ];
+  }
+
+  let messages = (ircc.messages || []).slice();
+  if (past('aor')) {
+    messages = messages.filter(m => !awaitingRe.test(m.text || ''));
+  } else if (eaprIdx >= 0 && ci >= eaprIdx) {
+    if (!messages.some(m => awaitingRe.test(m.text || '') || submittedRe.test(m.text || '')))
+      messages.unshift({ date: dates.eapr || '', text: 'Permanent residence application submitted in the IRCC PR Portal. Awaiting Acknowledgement of Receipt (AOR).' });
+  }
+  return { rows, messages };
+}
+
 function appBlock(c, idx, active, ctx = {}) {
   const track = trackFor(c.stream);
   const STG = stagesFor(track);
@@ -257,7 +335,7 @@ function appBlock(c, idx, active, ctx = {}) {
   }).join('');
   const hasEst = STG.some(s => isEstV(dates[s.key]));
   const checks = checklist.map(k => `<li class="${k.done ? '' : 'pend'}"><span class="tick ${k.done ? 'ok' : 'wait'}">${k.done ? '&#10003;' : '&#8226;'}</span>${esc(k.label)}</li>`).join('');
-  const ircc = safeJSON(c.ircc, null);
+  const ircc = reconcileIrcc(safeJSON(c.ircc, null), STG, ci, dates);
   const irccHtml = ircc ? `
     <div class="istat">${(ircc.rows || []).map(r => `<div class="irow"><span class="il">${esc(r[0])}</span><span class="iv ${r[2] || ''}">${esc(r[1])}</span></div>`).join('')}</div>
     ${(ircc.messages && ircc.messages.length) ? `<div class="imsg-h">Latest Updates From IRCC</div><div class="imsgs">${ircc.messages.map(m => `<div class="imsg"><span class="imd">${esc(m.date)}</span><span class="imt">${esc(m.text)}</span></div>`).join('')}</div>` : ''}`
