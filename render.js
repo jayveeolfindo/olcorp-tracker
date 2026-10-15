@@ -316,18 +316,21 @@ function appBlock(c, idx, active, ctx = {}) {
     const cls = i < ci ? 'done' : (i === ci ? 'current' : 'pending');
     const inner = i < ci ? '&#10003;' : (i + 1);
     const dv = dates[s.key];
-    // The Final Decision step, while it is the current step and the file is not a
-    // refusal hold, must always read "In Progress", never a stored green date. A
-    // dated green Final Decision reads to the client as a finalized decision, which
-    // is the opposite of the neutral in-progress state we want until COPR.
-    const decisionInProgress = (i === ci) && s.key === 'decision' && !onHold;
+    // The current step (medical, final decision, etc.) reads "In Progress" and,
+    // when a real (non-estimate) date is on file, appends it: "In Progress · <date>".
+    // The "In Progress ·" prefix keeps a dated Final Decision from reading to the
+    // client as a finalized decision, while still showing when the stage started.
+    // The one exception is a refusal hold: there the Final Decision has been
+    // received, so its date shows plainly, never "In Progress".
+    const isCurrent = (i === ci);
+    const heldDecision = onHold && s.key === 'decision';
     let when;
-    if (decisionInProgress) {
-      when = '<div class="when">In Progress</div>';
+    if (isCurrent && !heldDecision) {
+      when = (dv && !isEstV(dv))
+        ? `<div class="when">In Progress &middot; ${esc(dv)}</div>`
+        : '<div class="when">In Progress</div>';
     } else if (dv) {
       when = `<div class="when${isEstV(dv) ? ' est' : ''}">${esc(dv)}</div>`;
-    } else if (i === ci) {
-      when = '<div class="when">In Progress</div>';
     } else {
       when = '';
     }
