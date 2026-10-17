@@ -313,16 +313,21 @@ function appBlock(c, idx, active, ctx = {}) {
   const pct = Math.round(((ci + 0.5) / STG.length) * 100);
   const isEstV = v => !!v && /^\s*est\.?\b/i.test(String(v));
   const steps = STG.map((s, i) => {
-    const cls = i < ci ? 'done' : (i === ci ? 'current' : 'pending');
-    const inner = i < ci ? '&#10003;' : (i + 1);
     const dv = dates[s.key];
+    // A terminal completion stage the file has reached (COPR issued, visa issued)
+    // is DONE, not in progress: render it as a completed step showing its date,
+    // never "In Progress".
+    const terminalDone = (i === ci) && (s.key === 'issued' || s.key === 'copr');
+    const isDone = i < ci || terminalDone;
+    const cls = isDone ? 'done' : (i === ci ? 'current' : 'pending');
+    const inner = isDone ? '&#10003;' : (i + 1);
     // The current step (medical, final decision, etc.) reads "In Progress" and,
     // when a real (non-estimate) date is on file, appends it: "In Progress · <date>".
     // The "In Progress ·" prefix keeps a dated Final Decision from reading to the
     // client as a finalized decision, while still showing when the stage started.
     // The one exception is a refusal hold: there the Final Decision has been
     // received, so its date shows plainly, never "In Progress".
-    const isCurrent = (i === ci);
+    const isCurrent = (i === ci) && !terminalDone;
     const heldDecision = onHold && s.key === 'decision';
     let when;
     if (isCurrent && !heldDecision) {
