@@ -304,10 +304,11 @@ function appBlock(c, idx, active, ctx = {}) {
   if (onHold) { const di = STG.findIndex(s => s.key === 'decision'); ci = di >= 0 ? di : STG.length - 1; }
   else if (ci < 0) ci = 0;
   const dates = safeJSON(c.stage_dates, {});
-  // On a PR file, when the client has NO separate work/study/visitor extension
-  // application on the tracker, surface their current work permit expiration here.
+  // On a PR file, surface the client's current work permit expiration whenever it
+  // is set (for example the expiry of a newly issued permit), so it shows on the
+  // PR page while the PR is still in process.
   const isPR = appTypeLabel(c) === 'Permanent Residence';
-  const wpExpiry = (isPR && !ctx.hasExtApp) ? (dates.wp_expiry || null) : null;
+  const wpExpiry = isPR ? (dates.wp_expiry || null) : null;
   const checklist = safeJSON(c.checklist, []);
   const seg = STG.map((s, i) => `<i class="${i < ci ? 'on' : (i === ci ? 'cur' : '')}"></i>`).join('');
   const pct = Math.round(((ci + 0.5) / STG.length) * 100);
@@ -318,7 +319,7 @@ function appBlock(c, idx, active, ctx = {}) {
   // forward from the most recent REAL milestone on file (or today) using typical
   // IRCC stage gaps, and never display an estimate earlier than next month.
   const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const GAP = { sinp: 1, nom: 1, eapr: 1, aor: 1, support: 1, submitted: 1, bio: 1, medical: 0, process: 1, bg: 2, decision: 3, issued: 1, copr: 1 };
+  const GAP = { sinp: 1, nom: 1, eapr: 1, aor: 7, support: 1, submitted: 1, bio: 1, medical: 0, process: 1, bg: 2, decision: 3, issued: 1, copr: 1 };
   const parseLoose = v => {
     if (!v) return null;
     const s = String(v).replace(/^\s*est\.?\s*/i, '').trim();
@@ -557,7 +558,7 @@ function renderClientForm(c) {
     </div>
 
     <div class="sec"><h4>Milestone Dates <span class="hint2">(optional, shown under each step)</span></h4>
-      <div class="field"><label>Current Work Permit Expiration <span class="hint2">(shown on a PR file only when the client has no Work Permit Extension file; leave blank to hide)</span></label><input name="wp_expiry" value="${esc(dates.wp_expiry || '')}" placeholder="e.g. Oct 18, 2027"></div>
+      <div class="field"><label>Current Work Permit Expiration <span class="hint2">(shown on a PR file whenever set, e.g. the expiry of a newly issued permit; leave blank to hide)</span></label><input name="wp_expiry" value="${esc(dates.wp_expiry || '')}" placeholder="e.g. Oct 18, 2027"></div>
       <div class="stagegrid">${stageInputs}</div>
     </div>
 
