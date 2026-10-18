@@ -312,6 +312,38 @@ function appBlock(c, idx, active, ctx = {}) {
   const seg = STG.map((s, i) => `<i class="${i < ci ? 'on' : (i === ci ? 'cur' : '')}"></i>`).join('');
   const pct = Math.round(((ci + 0.5) / STG.length) * 100);
   const isEstV = v => !!v && /^\s*est\.?\b/i.test(String(v));
+  // --- Forward-projected estimates for not-yet-reached steps -------------------
+  // Stored "Est." dates are typed once at intake and go stale: a past month reads
+  // as overdue even when the file is on track. Instead, project each pending step
+  // forward from the most recent REAL milestone on file (or today) using typical
+  // IRCC stage gaps, and never display an estimate earlier than next month.
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const GAP = { sinp: 1, nom: 1, eapr: 1, aor: 1, support: 1, submitted: 1, bio: 1, medical: 1, process: 1, bg: 2, decision: 3, issued: 1, copr: 1 };
+  const parseLoose = v => {
+    if (!v) return null;
+    const s = String(v).replace(/^\s*est\.?\s*/i, '').trim();
+    let t = Date.parse(s);
+    if (isNaN(t)) t = Date.parse('1 ' + s); // bare "Sep 2026" -> "1 Sep 2026"
+    return isNaN(t) ? null : new Date(t);
+  };
+  const addMonths = (d, n) => { const x = new Date(d); x.setDate(1); x.setMonth(x.getMonth() + n); return x; };
+  const fmtEst = d => 'Est. ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear();
+  const estAt = {};
+  {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+    let anchor = null;
+    for (let j = 0; j <= ci; j++) {
+      const dv = dates[STG[j].key];
+      if (dv && !isEstV(dv)) { const p = parseLoose(dv); if (p && (!anchor || p > anchor)) anchor = p; }
+    }
+    let cursor = anchor || today;
+    for (let j = ci + 1; j < STG.length; j++) {
+      cursor = addMonths(cursor, GAP[STG[j].key] != null ? GAP[STG[j].key] : 1);
+      if (cursor < nextMonth) cursor = new Date(nextMonth);
+      estAt[j] = fmtEst(cursor);
+    }
+  }
   const steps = STG.map((s, i) => {
     const dv = dates[s.key];
     // A terminal completion stage the file has reached (COPR issued, visa issued)
@@ -334,6 +366,9 @@ function appBlock(c, idx, active, ctx = {}) {
       when = (dv && !isEstV(dv))
         ? `<div class="when">In Progress &middot; ${esc(dv)}</div>`
         : '<div class="when">In Progress</div>';
+    } else if (i > ci && !onHold) {
+      // not yet reached: show the forward-projected estimate (never a past month)
+      when = `<div class="when est">${esc(estAt[i] || '')}</div>`;
     } else if (dv) {
       when = `<div class="when${isEstV(dv) ? ' est' : ''}">${esc(dv)}</div>`;
     } else {
@@ -341,7 +376,7 @@ function appBlock(c, idx, active, ctx = {}) {
     }
     return `<div class="step ${cls}"><div class="node">${inner}</div><div><div class="t">${esc(s.t)}</div><div class="d">${esc(s.d)}</div>${when}</div></div>`;
   }).join('');
-  const hasEst = STG.some(s => isEstV(dates[s.key]));
+  const hasEst = !onHold && ci < STG.length - 1;
   const checks = checklist.map(k => `<li class="${k.done ? '' : 'pend'}"><span class="tick ${k.done ? 'ok' : 'wait'}">${k.done ? '&#10003;' : '&#8226;'}</span>${esc(k.label)}</li>`).join('');
   const ircc = reconcileIrcc(safeJSON(c.ircc, null), STG, ci, dates);
   const irccHtml = ircc ? `
