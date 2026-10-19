@@ -15,7 +15,7 @@ const SINP_STAGES = [
   { key: 'aor',      t: 'Acknowledgement of Receipt (AOR)', d: 'IRCC acknowledges receipt and links your file. This appears once the AOR is issued.' },
   { key: 'bio',      t: 'Biometrics',                    d: 'Fingerprints and photo captured at a collection point.' },
   { key: 'medical',  t: 'Medical Exam',                  d: 'Review of your medical history.' },
-  { key: 'bg',       t: 'Background & Security Check',    d: 'IRCC completes eligibility and admissibility review.' },
+  { key: 'bg',       t: 'Background & Security Check',    d: 'Right after your Biometrics appointment, IRCC completes eligibility and admissibility review.' },
   { key: 'decision', t: 'Final Decision',                d: 'IRCC issues the decision on your application.' },
   { key: 'copr',     t: 'PR Confirmed (COPR)',           d: 'Confirmation of Permanent Residence issued.' }
 ];
@@ -26,7 +26,7 @@ const EXPRESS_STAGES = [
   { key: 'aor',      t: 'Acknowledgement of Receipt (AOR)', d: 'IRCC acknowledges receipt and links your file. This appears once the AOR is issued.' },
   { key: 'bio',      t: 'Biometrics',                    d: 'Fingerprints and photo captured at a collection point.' },
   { key: 'medical',  t: 'Medical Exam',                  d: 'Review of your medical history.' },
-  { key: 'bg',       t: 'Background & Security Check',    d: 'IRCC completes eligibility and admissibility review.' },
+  { key: 'bg',       t: 'Background & Security Check',    d: 'Right after your Biometrics appointment, IRCC completes eligibility and admissibility review.' },
   { key: 'decision', t: 'Final Decision',                d: 'IRCC issues the decision on your application.' },
   { key: 'copr',     t: 'PR Confirmed (COPR)',           d: 'Confirmation of Permanent Residence issued.' }
 ];
