@@ -319,7 +319,7 @@ function appBlock(c, idx, active, ctx = {}) {
   // forward from the most recent REAL milestone on file (or today) using typical
   // IRCC stage gaps, and never display an estimate earlier than next month.
   const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const GAP = { sinp: 1, nom: 1, eapr: 1, aor: 7, support: 1, submitted: 1, bio: 1, medical: 0, process: 1, bg: 2, decision: 3, issued: 1, copr: 1 };
+  const GAP = { sinp: 1, nom: 1, eapr: 1, aor: 7, support: 1, submitted: 1, bio: 0, medical: 0, process: 1, bg: 2, decision: 3, issued: 1, copr: 1 };
   const parseLoose = v => {
     if (!v) return null;
     const s = String(v).replace(/^\s*est\.?\s*/i, '').trim();
