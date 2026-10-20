@@ -15,6 +15,7 @@ const SINP_STAGES = [
   { key: 'aor',      t: 'Acknowledgement of Receipt (AOR)', d: 'IRCC acknowledges receipt and links your file. This appears once the AOR is issued.' },
   { key: 'bio',      t: 'Biometrics',                    d: 'Fingerprints and photo captured at a collection point.' },
   { key: 'medical',  t: 'Medical Exam',                  d: 'Review of your medical history.' },
+  { key: 'prearrival', t: 'Pre-Arrival Services Letter Received', d: 'IRCC sends a letter inviting you to free Pre-Arrival Services, settlement support to help you prepare before you land in Canada.' },
   { key: 'bg',       t: 'Background & Security Check',    d: 'Right after your Biometrics appointment, IRCC completes eligibility and admissibility review.' },
   { key: 'decision', t: 'Final Decision',                d: 'IRCC issues the decision on your application.' },
   { key: 'copr',     t: 'PR Confirmed (COPR)',           d: 'Confirmation of Permanent Residence issued.' }
@@ -26,6 +27,7 @@ const EXPRESS_STAGES = [
   { key: 'aor',      t: 'Acknowledgement of Receipt (AOR)', d: 'IRCC acknowledges receipt and links your file. This appears once the AOR is issued.' },
   { key: 'bio',      t: 'Biometrics',                    d: 'Fingerprints and photo captured at a collection point.' },
   { key: 'medical',  t: 'Medical Exam',                  d: 'Review of your medical history.' },
+  { key: 'prearrival', t: 'Pre-Arrival Services Letter Received', d: 'IRCC sends a letter inviting you to free Pre-Arrival Services, settlement support to help you prepare before you land in Canada.' },
   { key: 'bg',       t: 'Background & Security Check',    d: 'Right after your Biometrics appointment, IRCC completes eligibility and admissibility review.' },
   { key: 'decision', t: 'Final Decision',                d: 'IRCC issues the decision on your application.' },
   { key: 'copr',     t: 'PR Confirmed (COPR)',           d: 'Confirmation of Permanent Residence issued.' }
@@ -118,6 +120,7 @@ const ALL_STAGES = [
   { key: 'submitted',t: 'Application Submitted to IRCC' },
   { key: 'bio',      t: 'Biometrics' },
   { key: 'medical',  t: 'Medical Exam' },
+  { key: 'prearrival', t: 'Pre-Arrival Services Letter Received' },
   { key: 'process',  t: 'Application in Process' },
   { key: 'bg',       t: 'Background & Security Check' },
   { key: 'decision', t: 'Final Decision' },
@@ -159,6 +162,7 @@ const PR_FED = {
   aor:     "Good news, IRCC has confirmed they have your application. There is nothing you need to do at the moment. The next thing to watch for is a biometrics request, so please tell us as soon as one arrives and we will guide you from there.",
   bio:     "Most clients receive a biometrics letter by email asking for fingerprints and a photo. If you get one, please book and complete your appointment as soon as you can, then let us know. We are glad to walk you through where to go and what to bring.",
   medical: "If IRCC emails you to request your medical, please complete it with an approved panel physician if you have not already. If you have not been asked, there is nothing to do for now. We are happy to help you find the nearest panel doctor.",
+  prearrival: "Wonderful, receiving the Pre-Arrival Services letter is a positive sign your application is moving along well. These services are free settlement supports that help you prepare for life in Canada, and we recommend registering for them. Please forward the letter to us so we can keep your file complete, and we are glad to help you sign up.",
   bg:      "Your background and security check is now underway. This is the second longest stage, so please be patient, it is a normal and quiet part of the process. There is nothing you need to do while it runs, and we are keeping an eye on it for you.",
   decision:"You are almost there, and we are so close now. IRCC is finalizing your decision. Please keep your passport valid and your contact details current so nothing is delayed. We will coordinate your virtual landing and your PR card photo with you. If you had a PR photo taken within the last 12 months we can still use it; if not, please have a professional digital photo taken (a digital copy only, not a scan, and the back details are not needed). We will guide you through every step.",
   copr:    "Congratulations, this is the moment we have all been working toward. Please follow the landing instructions we will send you to complete your permanent residence and apply for your PR card. We could not be happier for you."
@@ -250,7 +254,7 @@ const FEES_NOTE = " To keep your filing on schedule, it also helps to set aside 
 // Appended to the post-filing waiting steps, where IRCC may occasionally email the client directly.
 const IRCC_FWD = " IRCC usually sends updates to us, but once in a while they email you directly. If you ever receive anything from IRCC, please forward it to us right away so we can guide you on it and keep your file properly tracked.";
 const FEES_KEYS = new Set(['intake', 'nom']);
-const FWD_KEYS = new Set(['eapr', 'aor', 'bg', 'submitted', 'process']);
+const FWD_KEYS = new Set(['eapr', 'aor', 'prearrival', 'bg', 'submitted', 'process']);
 
 // Neutral holding message shown when a final decision has landed but we do not
 // want the client to read the outcome from the tracker before we have spoken with

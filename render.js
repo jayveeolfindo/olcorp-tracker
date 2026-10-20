@@ -71,6 +71,9 @@ h1{font-size:24px;font-weight:800;letter-spacing:-.5px;margin:14px 2px 6px}
 .step .when{font-family:var(--mono);font-size:10.5px;letter-spacing:.6px;color:var(--faint);margin-top:6px;text-transform:uppercase}
 .step.current .when{color:var(--green)}
 .step .when.est{color:#b7791f}
+.substep{display:flex;align-items:baseline;gap:8px;margin-top:7px;font-size:11.5px;color:var(--muted)}
+.substep .subdot{width:5px;height:5px;border-radius:50%;background:var(--green);flex:0 0 5px;align-self:center}
+.substep .subdate{font-family:var(--mono);font-size:10px;letter-spacing:.5px;color:var(--faint);text-transform:uppercase}
 .estnote{margin:0 22px 18px;font-size:11px;line-height:1.45;color:#b7791f;font-style:italic}
 .cols{display:grid;grid-template-columns:1fr .82fr;gap:14px;margin-top:14px}
 @media(max-width:820px){.cols{grid-template-columns:1fr}}
@@ -319,7 +322,7 @@ function appBlock(c, idx, active, ctx = {}) {
   // forward from the most recent REAL milestone on file (or today) using typical
   // IRCC stage gaps, and never display an estimate earlier than next month.
   const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const GAP = { sinp: 1, nom: 1, eapr: 1, aor: 7, support: 1, submitted: 1, bio: 0, medical: 0, process: 1, bg: 2, decision: 3, issued: 1, copr: 1 };
+  const GAP = { sinp: 1, nom: 1, eapr: 1, aor: 7, support: 1, submitted: 1, bio: 0, medical: 0, prearrival: 1, process: 1, bg: 2, decision: 3, issued: 1, copr: 1 };
   const parseLoose = v => {
     if (!v) return null;
     const s = String(v).replace(/^\s*est\.?\s*/i, '').trim();
@@ -375,7 +378,16 @@ function appBlock(c, idx, active, ctx = {}) {
     } else {
       when = '';
     }
-    return `<div class="step ${cls}"><div class="node">${inner}</div><div><div class="t">${esc(s.t)}</div><div class="d">${esc(s.d)}</div>${when}</div></div>`;
+    // PR-only sub-steps: email-received milestones nested under their parent step.
+    let subs = '';
+    if (isPR) {
+      const subRow = (label, dd) => `<div class="substep"><span class="subdot"></span><span>${esc(label)}</span><span class="subdate">${esc(dd)}</span></div>`;
+      if (s.key === 'decision') {
+        if (dates.pr_portal_tab1 && !isEstV(dates.pr_portal_tab1)) subs += subRow('PR Portal Tab 1 Email Received', dates.pr_portal_tab1);
+        if (dates.pr_portal_tab2 && !isEstV(dates.pr_portal_tab2)) subs += subRow('PR Portal Tab 2 Email Received', dates.pr_portal_tab2);
+      }
+    }
+    return `<div class="step ${cls}"><div class="node">${inner}</div><div><div class="t">${esc(s.t)}</div><div class="d">${esc(s.d)}</div>${when}${subs}</div></div>`;
   }).join('');
   const hasEst = !onHold && ci < STG.length - 1;
   const checks = checklist.map(k => `<li class="${k.done ? '' : 'pend'}"><span class="tick ${k.done ? 'ok' : 'wait'}">${k.done ? '&#10003;' : '&#8226;'}</span>${esc(k.label)}</li>`).join('');
@@ -559,6 +571,10 @@ function renderClientForm(c) {
 
     <div class="sec"><h4>Milestone Dates <span class="hint2">(optional, shown under each step)</span></h4>
       <div class="field"><label>Current Work Permit Expiration <span class="hint2">(shown on a PR file whenever set, e.g. the expiry of a newly issued permit; leave blank to hide)</span></label><input name="wp_expiry" value="${esc(dates.wp_expiry || '')}" placeholder="e.g. Oct 18, 2027"></div>
+      <div class="row2">
+        <div class="field"><label>PR Portal Tab 1 Email Received <span class="hint2">(sub-step under Final Decision)</span></label><input name="stage_pr_portal_tab1" value="${esc(dates.pr_portal_tab1 || '')}" placeholder="e.g. Dec 1, 2026"></div>
+        <div class="field"><label>PR Portal Tab 2 Email Received <span class="hint2">(sub-step under Final Decision)</span></label><input name="stage_pr_portal_tab2" value="${esc(dates.pr_portal_tab2 || '')}" placeholder="e.g. Dec 15, 2026"></div>
+      </div>
       <div class="stagegrid">${stageInputs}</div>
     </div>
 
