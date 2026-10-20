@@ -341,8 +341,12 @@ function appBlock(c, idx, active, ctx = {}) {
   const isPR = appTypeLabel(c) === 'Permanent Residence';
   const wpExpiry = isPR ? (dates.wp_expiry || null) : null;
   const checklist = safeJSON(c.checklist, []);
-  const seg = STG.map((s, i) => `<i class="${i < ci ? 'on' : (i === ci ? 'cur' : '')}"></i>`).join('');
-  const pct = Math.round(((ci + 0.5) / STG.length) * 100);
+  // A terminal completion stage the file has reached (COPR issued, permit/visa
+  // issued) is the end of the line: the whole bar fills solid green at 100%,
+  // not a faded "current" final segment at 95%.
+  const atTerminal = !onHold && !!STG[ci] && (STG[ci].key === 'copr' || STG[ci].key === 'issued');
+  const seg = STG.map((s, i) => `<i class="${(i < ci || (atTerminal && i === ci)) ? 'on' : (i === ci ? 'cur' : '')}"></i>`).join('');
+  const pct = atTerminal ? 100 : Math.round(((ci + 0.5) / STG.length) * 100);
   const isEstV = v => !!v && /^\s*est\.?\b/i.test(String(v));
   // --- Forward-projected estimates for not-yet-reached steps -------------------
   // Stored "Est." dates are typed once at intake and go stale: a past month reads
