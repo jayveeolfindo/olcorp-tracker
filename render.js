@@ -380,6 +380,25 @@ function appBlock(c, idx, active, ctx = {}) {
       estAt[j] = fmtEst(cursor);
     }
   }
+  // Pre-Arrival Services estimate: the invitation letter typically arrives about
+  // 2 to 6 weeks after AOR and biometrics. Anchor to the later of those two real
+  // dates and show a single estimated month (the middle of that window), never a
+  // past month, and only while the file is still in process (not yet at Final
+  // Decision). Shown on the Pre-Arrival step whenever it has no real date.
+  let preEst = '';
+  {
+    const decI = STG.findIndex(s => s.key === 'decision');
+    const beforeDecision = decI < 0 || ci < decI;
+    const anchors = [parseLoose(dates.aor), parseLoose(dates.bio)].filter(Boolean);
+    if (beforeDecision && anchors.length) {
+      const anchor = new Date(Math.max.apply(null, anchors));
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+      let est = addMonths(anchor, 1);
+      if (est < nextMonth) est = new Date(nextMonth);
+      preEst = fmtEst(est);
+    }
+  }
   const steps = STG.map((s, i) => {
     const dv = dates[s.key];
     // A terminal completion stage the file has reached (COPR issued, visa issued)
@@ -413,6 +432,10 @@ function appBlock(c, idx, active, ctx = {}) {
       when = (dv && !isEstV(dv))
         ? `<div class="when">In Progress &middot; ${esc(dv)}</div>`
         : '<div class="when">In Progress</div>';
+    } else if (s.key === 'prearrival' && !hasRealDate && !onHold && preEst) {
+      // Pre-Arrival with no real date yet: show the AOR/biometrics-based estimate,
+      // whether the stage has passed it or not yet reached it.
+      when = `<div class="when est">${esc(preEst)}</div>`;
     } else if (i > ci && !onHold) {
       // not yet reached: show the forward-projected estimate (never a past month)
       when = `<div class="when est">${esc(estAt[i] || '')}</div>`;
