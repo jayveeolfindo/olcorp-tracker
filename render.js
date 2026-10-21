@@ -231,6 +231,11 @@ function reconcileIrcc(ircc, STG, ci, dates) {
   const idxOf = key => STG.findIndex(s => s.key === key);
   const aorIdx = idxOf('aor'), decIdx = idxOf('decision'), eaprIdx = idxOf('eapr');
   const past = key => { const i = idxOf(key); return i >= 0 && ci >= i; };
+  // Approval reached: COPR issued (PR) or permit issued (TR). Once here the
+  // whole federal review is finished, so the summary and Final Decision rows
+  // must read Approved, not the frozen "in progress" captured at the last sync.
+  const coprIdx = idxOf('copr'), issuedIdx = idxOf('issued');
+  const approvedDone = (coprIdx >= 0 && ci >= coprIdx) || (issuedIdx >= 0 && ci >= issuedIdx);
   const norm = s => String(s || '').toLowerCase();
   const looksDone = v => /pass|complete|received|approved|\bmet\b|issued|done/i.test(String(v));
   const milestoneKey = label => {
@@ -259,6 +264,7 @@ function reconcileIrcc(ircc, STG, ci, dates) {
   let rows = (ircc.rows || []).map(r => {
     const label = r[0], value = r[1], state = r[2] || '', l = norm(label);
     if (/application status/.test(l)) {
+      if (approvedDone) return [label, 'Application Approved', 'done'];
       if (past('aor') && /aor pending|awaiting|not .*acknowledg/i.test(value))
         return [label, 'We Are Processing Your Application', 'prog'];
       return r;
@@ -266,6 +272,7 @@ function reconcileIrcc(ircc, STG, ci, dates) {
     const mk = milestoneKey(label);
     if (!mk) return r; // leave eligibility and other real detail rows untouched
     if (mk === 'decision') {
+      if (approvedDone) return [label, finDate ? 'Approved · ' + finDate : 'Approved', 'done'];
       if (past('decision')) return [label, 'In Progress', 'prog'];
       return finDate ? [label, 'In Progress · ' + finDate, 'prog'] : [label, 'Not Started', 'wait'];
     }
@@ -277,17 +284,38 @@ function reconcileIrcc(ircc, STG, ci, dates) {
     return [label, 'Not Started', 'wait']; // step not reached yet
   });
 
-  // If there is no synced panel body at all, build the AOR summary from the stage.
+  // If there is no synced panel body at all, build a summary from the stage.
   if (!rows.length && eaprIdx >= 0 && ci >= eaprIdx) {
-    const aorDone = past('aor');
-    rows = [
-      ['Application Status', aorDone ? 'We Are Processing Your Application' : 'e-APR Submitted, AOR Pending', 'prog'],
-      ['Acknowledgement of Receipt (AOR)', aorDone ? aorVal() : 'Pending', aorDone ? 'done' : 'wait']
-    ];
+    if (approvedDone) {
+      rows = [
+        ['Application Status', 'Application Approved', 'done'],
+        ['Final Decision', dates.decision && !/^\s*est/i.test(String(dates.decision)) ? 'Approved · ' + dates.decision : 'Approved', 'done']
+      ];
+    } else {
+      const aorDone = past('aor');
+      rows = [
+        ['Application Status', aorDone ? 'We Are Processing Your Application' : 'e-APR Submitted, AOR Pending', 'prog'],
+        ['Acknowledgement of Receipt (AOR)', aorDone ? aorVal() : 'Pending', aorDone ? 'done' : 'wait']
+      ];
+    }
   }
 
   let messages = (ircc.messages || []).slice();
-  if (past('aor')) {
+  if (approvedDone) {
+    // Drop the frozen "final decision in progress" / "awaiting AOR" lines and
+    // lead with the approval, so the latest-update note matches the timeline.
+    messages = messages.filter(m => {
+      const t = m.text || '';
+      return !awaitingRe.test(t) && !(/final decision/i.test(t) && /in progress|reached the final/i.test(t));
+    });
+    const isPRtrack = coprIdx >= 0;
+    const appDate = isPRtrack ? (dates.copr || dates.decision || '') : (dates.issued || dates.decision || '');
+    const appText = isPRtrack
+      ? 'Your application for permanent residence has been approved. Confirmation of Permanent Residence (COPR) issued.'
+      : 'Your application has been approved.';
+    if (!messages.some(m => /approved/i.test(m.text || '')))
+      messages.unshift({ date: appDate, text: appText });
+  } else if (past('aor')) {
     messages = messages.filter(m => !awaitingRe.test(m.text || ''));
   } else if (eaprIdx >= 0 && ci >= eaprIdx) {
     if (!messages.some(m => awaitingRe.test(m.text || '') || submittedRe.test(m.text || '')))
@@ -313,8 +341,12 @@ function appBlock(c, idx, active, ctx = {}) {
   const isPR = appTypeLabel(c) === 'Permanent Residence';
   const wpExpiry = isPR ? (dates.wp_expiry || null) : null;
   const checklist = safeJSON(c.checklist, []);
-  const seg = STG.map((s, i) => `<i class="${i < ci ? 'on' : (i === ci ? 'cur' : '')}"></i>`).join('');
-  const pct = Math.round(((ci + 0.5) / STG.length) * 100);
+  // A terminal completion stage the file has reached (COPR issued, permit/visa
+  // issued) is the end of the line: the whole bar fills solid green at 100%,
+  // not a faded "current" final segment at 95%.
+  const atTerminal = !onHold && !!STG[ci] && (STG[ci].key === 'copr' || STG[ci].key === 'issued');
+  const seg = STG.map((s, i) => `<i class="${(i < ci || (atTerminal && i === ci)) ? 'on' : (i === ci ? 'cur' : '')}"></i>`).join('');
+  const pct = atTerminal ? 100 : Math.round(((ci + 0.5) / STG.length) * 100);
   const isEstV = v => !!v && /^\s*est\.?\b/i.test(String(v));
   // --- Forward-projected estimates for not-yet-reached steps -------------------
   // Stored "Est." dates are typed once at intake and go stale: a past month reads
@@ -354,8 +386,15 @@ function appBlock(c, idx, active, ctx = {}) {
     // is DONE, not in progress: render it as a completed step showing its date,
     // never "In Progress".
     const terminalDone = (i === ci) && (s.key === 'issued' || s.key === 'copr');
-    const isDone = i < ci || terminalDone;
-    const cls = isDone ? 'done' : (i === ci ? 'current' : 'pending');
+    // Pre-Arrival Services is an optional milestone that does not always arrive,
+    // so the stage advancing past it is NOT proof the letter was received. Only
+    // tick it as done when its date is actually on file; with no date, show it as
+    // a not-yet (pending) step even though the stage is further along, so a
+    // dateless Pre-Arrival step never reads to the client as completed.
+    const hasRealDate = dv && !isEstV(dv);
+    const datelessOptional = (s.key === 'prearrival') && (i < ci) && !hasRealDate;
+    const isDone = (i < ci || terminalDone) && !datelessOptional;
+    const cls = datelessOptional ? 'pending' : (isDone ? 'done' : (i === ci ? 'current' : 'pending'));
     const inner = isDone ? '&#10003;' : (i + 1);
     // The current step (medical, final decision, etc.) reads "In Progress" and,
     // when a real (non-estimate) date is on file, appends it: "In Progress · <date>".
