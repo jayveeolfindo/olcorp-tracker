@@ -386,13 +386,17 @@ function appBlock(c, idx, active, ctx = {}) {
     // is DONE, not in progress: render it as a completed step showing its date,
     // never "In Progress".
     const terminalDone = (i === ci) && (s.key === 'issued' || s.key === 'copr');
-    // Pre-Arrival Services is an optional milestone that does not always arrive,
-    // so the stage advancing past it is NOT proof the letter was received. Only
-    // tick it as done when its date is actually on file; with no date, show it as
-    // a not-yet (pending) step even though the stage is further along, so a
-    // dateless Pre-Arrival step never reads to the client as completed.
+    // Verification steps (Medical, Background, Pre-Arrival) run concurrently at
+    // IRCC, not strictly in sequence, so the stage advancing past one is NOT proof
+    // it finished. Only tick these as done when a date is actually on file; with no
+    // date, show the step as a not-yet (pending) step even though the stage is
+    // further along, so a dateless verification step never reads as completed. The
+    // core sequential steps (intake, SINP, nomination, e-APR, AOR, biometrics,
+    // final decision, COPR) still tick by stage, since reaching a later one proves
+    // they happened.
     const hasRealDate = dv && !isEstV(dv);
-    const datelessOptional = (s.key === 'prearrival') && (i < ci) && !hasRealDate;
+    const VERIFY_STEP = (s.key === 'prearrival' || s.key === 'medical' || s.key === 'bg');
+    const datelessOptional = VERIFY_STEP && (i < ci) && !hasRealDate;
     const isDone = (i < ci || terminalDone) && !datelessOptional;
     const cls = datelessOptional ? 'pending' : (isDone ? 'done' : (i === ci ? 'current' : 'pending'));
     const inner = isDone ? '&#10003;' : (i + 1);
