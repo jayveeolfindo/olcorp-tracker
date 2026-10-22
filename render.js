@@ -561,8 +561,12 @@ function renderTracker(input, opts = {}) {
 
 // ---- consultant admin ----
 function renderAdmin(clients, archived = []) {
-  const rows = clients.map(c => {
+  const statusOf = c => {
     const st = stagesFor(trackFor(c.stream))[stageIndex(c.current_stage, trackFor(c.stream))];
+    return st ? st.t : (c.current_stage === 'hold' ? 'Final Decision Received (On Hold)' : (c.current_stage || ''));
+  };
+  const rows = clients.map(c => {
+    const statusText = statusOf(c);
     let sd = {}; try { sd = JSON.parse(c.stage_dates || '{}'); } catch (e) { sd = {}; }
     const wsent = sd.welcome_sent;
     let welcomeCell;
@@ -574,9 +578,10 @@ function renderAdmin(clients, archived = []) {
     } else {
       welcomeCell = `<form method="POST" action="/admin/clients/${esc(c.id)}/welcome" style="margin:0" onsubmit="return confirm('Send the welcome email with a secure tracker link to ${esc(c.client_email)}?')"><button class="abtn">Send welcome</button></form>`;
     }
-    return `<div class="arow">
+    const hay = ((c.full_name || '') + ' ' + (c.noc || '') + ' ' + (c.status_label || '') + ' ' + statusText).toLowerCase();
+    return `<div class="arow" data-search="${esc(hay)}" data-status="${esc(statusText)}">
       <div><div class="aname">${esc(c.full_name)}</div><div class="ameta">${esc(c.noc || '')}</div></div>
-      <div><div class="ameta">${esc(st ? st.t : (c.current_stage === 'hold' ? 'Final Decision Received (On Hold)' : c.current_stage))}</div><div class="ameta">${esc(c.status_label || '')}</div></div>
+      <div><div class="ameta">${esc(statusText)}</div><div class="ameta">${esc(c.status_label || '')}</div></div>
       <div class="actions">
         <a class="abtn ghost" href="/admin/clients/${esc(c.id)}/preview">View as client</a>
         <a class="abtn ghost" href="/admin/clients/${esc(c.id)}/edit">Edit</a>
@@ -587,6 +592,34 @@ function renderAdmin(clients, archived = []) {
       </div>
     </div>`;
   }).join('');
+  // Status filter: one entry per distinct stage, with a count, sorted by how many
+  // clients sit at each stage (most common first).
+  const counts = {};
+  clients.forEach(c => { const s = statusOf(c); counts[s] = (counts[s] || 0) + 1; });
+  const statusOptions = Object.keys(counts).sort((a, b) => counts[b] - counts[a] || a.localeCompare(b))
+    .map(s => `<option value="${esc(s)}">${esc(s)} (${counts[s]})</option>`).join('');
+  const colHead = `<div class="arowhead"><div>Client</div><div>Status</div><div style="text-align:right">Actions</div></div>`;
+  const filterBar = `<div class="filterbar">
+    <input id="cliSearch" type="search" placeholder="Search name, status, NOC..." autocomplete="off">
+    <select id="cliStatus"><option value="">All statuses (${clients.length})</option>${statusOptions}</select>
+    <span id="cliCount" class="fcount"></span>
+  </div>`;
+  const filterCss = `<style>
+    .filterbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 2px 14px}
+    .filterbar input,.filterbar select{font-family:var(--sans);font-size:13px;border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;outline:none;background:#fff}
+    .filterbar input{flex:1;min-width:180px}.filterbar input:focus,.filterbar select:focus{border-color:var(--green)}
+    .fcount{font-size:12px;color:var(--faint);white-space:nowrap}
+    .arowhead{display:grid;grid-template-columns:1.6fr 1.4fr auto;gap:14px;padding:11px 18px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--faint)}
+    @media(max-width:700px){.arowhead{display:none}}
+  </style>`;
+  const filterJs = `<script>(function(){
+    var q=document.getElementById('cliSearch'),sel=document.getElementById('cliStatus'),cnt=document.getElementById('cliCount');
+    var rows=[].slice.call(document.querySelectorAll('.arow[data-search]'));
+    function apply(){var t=(q.value||'').toLowerCase().trim(),s=sel.value,n=0;
+      rows.forEach(function(r){var ok=(!t||r.getAttribute('data-search').indexOf(t)>=0)&&(!s||r.getAttribute('data-status')===s);r.style.display=ok?'':'none';if(ok)n++;});
+      cnt.textContent=n+' of '+rows.length+' shown';}
+    q.addEventListener('input',apply);sel.addEventListener('change',apply);apply();
+  })();</script>`;
   const archivedRows = archived.map(c => `<div class="arow arch">
       <div><div class="aname">${esc(c.full_name)}</div><div class="ameta">${esc(c.noc || '')}</div></div>
       <div><div class="ameta">Archived</div></div>
@@ -595,11 +628,13 @@ function renderAdmin(clients, archived = []) {
         <form method="POST" action="/admin/clients/${esc(c.id)}/delete" style="margin:0" onsubmit="return confirm('Permanently delete ${esc(c.full_name)} and all their access records? This cannot be undone.')"><button class="abtn ghost" style="color:#b23c30;border-color:#f2ccc8">Delete</button></form>
       </div>
     </div>`).join('');
-  const body = `<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px"><h1>Consultant · Active Files</h1>
+  const body = `${filterCss}<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px"><h1>Consultant · Active Files</h1>
     <span style="display:flex;gap:8px"><a class="abtn ghost" href="/admin/log">Access log</a><a class="abtn" href="/admin/clients/new">+ Add Client</a></span></div>
   <p class="sub">Add or edit a client, paste their SINP/IRCC status, and issue a one-time secure link (QR) or email it to the client.</p>
-  <div class="card">${rows || '<div class="arow"><div class="ameta">No active clients yet. Click &ldquo;Add Client&rdquo; to create one.</div></div>'}</div>
-  ${archived.length ? `<h1 style="font-size:16px;margin-top:26px">Archived Files</h1><div class="card">${archivedRows}</div>` : ''}`;
+  ${filterBar}
+  <div class="card">${colHead}${rows || '<div class="arow"><div class="ameta">No active clients yet. Click &ldquo;Add Client&rdquo; to create one.</div></div>'}</div>
+  ${archived.length ? `<h1 style="font-size:16px;margin-top:26px">Archived Files</h1><div class="card">${archivedRows}</div>` : ''}
+  ${filterJs}`;
   return page('Admin · Client Application Tracker', body);
 }
 
