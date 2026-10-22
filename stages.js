@@ -16,7 +16,7 @@ const SINP_STAGES = [
   { key: 'bio',      t: 'Biometrics',                    d: 'Fingerprints and photo captured at a collection point.' },
   { key: 'prearrival', t: 'Invitation to Pre-Arrival Services Letter Received', d: 'IRCC sends a letter inviting you to free Pre-Arrival Services, settlement support to help you prepare before you land in Canada.' },
   { key: 'medical',  t: 'Medical Exam',                  d: 'Review of your medical history.' },
-  { key: 'bg',       t: 'Background & Security Check',    d: 'Right after your Biometrics appointment, IRCC completes eligibility and admissibility review.' },
+  { key: 'bg',       t: 'Background & Security Check',    d: 'Right after your biometrics appointment, IRCC reviews your background and admissibility to Canada. This stage is routine and can take some time.' },
   { key: 'decision', t: 'Final Decision',                d: 'IRCC issues the decision on your application.' },
   { key: 'copr',     t: 'PR Confirmed (COPR)',           d: 'Confirmation of Permanent Residence issued.' }
 ];
@@ -28,7 +28,7 @@ const EXPRESS_STAGES = [
   { key: 'bio',      t: 'Biometrics',                    d: 'Fingerprints and photo captured at a collection point.' },
   { key: 'prearrival', t: 'Invitation to Pre-Arrival Services Letter Received', d: 'IRCC sends a letter inviting you to free Pre-Arrival Services, settlement support to help you prepare before you land in Canada.' },
   { key: 'medical',  t: 'Medical Exam',                  d: 'Review of your medical history.' },
-  { key: 'bg',       t: 'Background & Security Check',    d: 'Right after your Biometrics appointment, IRCC completes eligibility and admissibility review.' },
+  { key: 'bg',       t: 'Background & Security Check',    d: 'Right after your biometrics appointment, IRCC reviews your background and admissibility to Canada. This stage is routine and can take some time.' },
   { key: 'decision', t: 'Final Decision',                d: 'IRCC issues the decision on your application.' },
   { key: 'copr',     t: 'PR Confirmed (COPR)',           d: 'Confirmation of Permanent Residence issued.' }
 ];
