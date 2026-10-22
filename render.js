@@ -399,7 +399,7 @@ function appBlock(c, idx, active, ctx = {}) {
       preEst = fmtEst(est);
     }
   }
-  const steps = STG.map((s, i) => {
+  let descs = STG.map((s, i) => {
     const dv = dates[s.key];
     // A terminal completion stage the file has reached (COPR issued, visa issued)
     // is DONE, not in progress: render it as a completed step showing its date,
@@ -418,7 +418,6 @@ function appBlock(c, idx, active, ctx = {}) {
     const datelessOptional = VERIFY_STEP && (i < ci) && !hasRealDate;
     const isDone = (i < ci || terminalDone) && !datelessOptional;
     const cls = datelessOptional ? 'pending' : (isDone ? 'done' : (i === ci ? 'current' : 'pending'));
-    const inner = isDone ? '&#10003;' : (i + 1);
     // The current step (medical, final decision, etc.) reads "In Progress" and,
     // when a real (non-estimate) date is on file, appends it: "In Progress · <date>".
     // The "In Progress ·" prefix keeps a dated Final Decision from reading to the
@@ -427,7 +426,7 @@ function appBlock(c, idx, active, ctx = {}) {
     // received, so its date shows plainly, never "In Progress".
     const isCurrent = (i === ci) && !terminalDone;
     const heldDecision = onHold && s.key === 'decision';
-    let when;
+    let when, estStr = '';
     if (isCurrent && !heldDecision) {
       when = (dv && !isEstV(dv))
         ? `<div class="when">In Progress &middot; ${esc(dv)}</div>`
@@ -435,10 +434,12 @@ function appBlock(c, idx, active, ctx = {}) {
     } else if (s.key === 'prearrival' && !hasRealDate && !onHold && preEst) {
       // Pre-Arrival with no real date yet: show the AOR/biometrics-based estimate,
       // whether the stage has passed it or not yet reached it.
+      estStr = preEst;
       when = `<div class="when est">${esc(preEst)}</div>`;
     } else if (i > ci && !onHold) {
       // not yet reached: show the forward-projected estimate (never a past month)
-      when = `<div class="when est">${esc(estAt[i] || '')}</div>`;
+      estStr = estAt[i] || '';
+      when = `<div class="when est">${esc(estStr)}</div>`;
     } else if (dv) {
       when = `<div class="when${isEstV(dv) ? ' est' : ''}">${esc(dv)}</div>`;
     } else {
@@ -453,7 +454,36 @@ function appBlock(c, idx, active, ctx = {}) {
         if (dates.pr_portal_tab2 && !isEstV(dates.pr_portal_tab2)) subs += subRow('PR Portal Tab 2 Email Received', dates.pr_portal_tab2);
       }
     }
-    return `<div class="step ${cls}"><div class="node">${inner}</div><div><div class="t">${esc(s.t)}</div><div class="d">${esc(s.d)}</div>${when}${subs}</div></div>`;
+    // Sort rank/time for the concurrent-checks cluster (below): done steps first in
+    // real-date order, then the in-progress step, then still-expected ones by their
+    // estimate. So a check that finished earlier never sits under one that has not.
+    const rank = isDone ? 0 : (isCurrent ? 1 : 2);
+    let sortTime;
+    if (isDone) { const p = parseLoose(dv); sortTime = p ? p.getTime() : i; }
+    else if (isCurrent) { sortTime = Date.now(); }
+    else { const p = parseLoose(estStr); sortTime = p ? p.getTime() : Number.MAX_SAFE_INTEGER; }
+    return { s, i, cls, isDone, when, subs, rank, sortTime };
+  });
+  // Reorder the parallel checks (biometrics, pre-arrival, medical, background /
+  // in-process) by what actually happened, since IRCC runs them concurrently. Only
+  // the one contiguous cluster of these keys is reordered; every other step keeps
+  // its fixed position, and the progress bar and percentage are unchanged.
+  {
+    const CLUSTER = new Set(['bio', 'prearrival', 'medical', 'bg', 'process']);
+    let start = -1, end = -1;
+    for (let k = 0; k < descs.length; k++) {
+      if (CLUSTER.has(descs[k].s.key)) { if (start < 0) start = k; end = k; }
+      else if (start >= 0) break;
+    }
+    if (start >= 0 && end > start) {
+      const block = descs.slice(start, end + 1)
+        .sort((a, b) => (a.rank - b.rank) || (a.sortTime - b.sortTime));
+      descs = descs.slice(0, start).concat(block, descs.slice(end + 1));
+    }
+  }
+  const steps = descs.map((d, pos) => {
+    const inner = d.isDone ? '&#10003;' : (pos + 1);
+    return `<div class="step ${d.cls}"><div class="node">${inner}</div><div><div class="t">${esc(d.s.t)}</div><div class="d">${esc(d.s.d)}</div>${d.when}${d.subs}</div></div>`;
   }).join('');
   const hasEst = !onHold && ci < STG.length - 1;
   const checks = checklist.map(k => `<li class="${k.done ? '' : 'pend'}"><span class="tick ${k.done ? 'ok' : 'wait'}">${k.done ? '&#10003;' : '&#8226;'}</span>${esc(k.label)}</li>`).join('');
