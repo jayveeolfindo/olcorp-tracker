@@ -205,15 +205,17 @@ function maskRef(r) {
 
 function appTypeLabel(c) {
   const track = trackFor(c.stream);
-  if (track === 'study-permit')   return 'Study Permit';
+  if (track === 'study-permit' || track === 'study-outside') return 'Study Permit';
   if (track === 'visitor-visa')   return 'Visitor Visa';
   if (track === 'super-visa')     return 'Super Visa';
   if (track === 'stay-extension') return 'Stay Extension';
-  if (track === 'temp-sinp' || track === 'temp') {
+  if (track === 'temp-sinp' || track === 'temp' || track === 'temp-outside') {
     const s = String(c.stream || '') + ' ' + String(c.reference || '');
-    if (/study/i.test(s)) return 'Study Permit Extension';
-    if (/visitor|\bVR\b/i.test(s)) return 'Visitor Record Extension';
-    return 'Work Permit Extension';
+    // Files from outside Canada are new applications, not extensions.
+    const ext = (track !== 'temp-outside');
+    if (/study/i.test(s)) return ext ? 'Study Permit Extension' : 'Study Permit';
+    if (/visitor|\bVR\b/i.test(s)) return ext ? 'Visitor Record Extension' : 'Visitor Record';
+    return ext ? 'Work Permit Extension' : 'Work Permit';
   }
   return 'Permanent Residence';
 }
