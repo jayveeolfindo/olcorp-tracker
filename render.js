@@ -733,7 +733,10 @@ function appBlock(c, idx, active, ctx = {}) {
     } else if (d.estStr) {
       when = `<span class="when est">${esc(d.estStr)}</span>`;
     }
-    return `<div class="step ${d.cls}"><div class="node">${inner}</div><div class="body"><div class="t">${esc(d.s.t)}</div><div class="d">${esc(d.s.d)}</div>${when}${d.subs}</div></div>`;
+    // Once the medical has a real date it has been passed, so say so instead of
+    // the generic "we will review" wording.
+    const stepDesc = (d.s.key === 'medical' && d.isDone && d.dv && !isEstV(d.dv)) ? 'You passed the medical exam.' : d.s.d;
+    return `<div class="step ${d.cls}"><div class="node">${inner}</div><div class="body"><div class="t">${esc(d.s.t)}</div><div class="d">${esc(stepDesc)}</div>${when}${d.subs}</div></div>`;
   }).join('');
   const ircc = reconcileIrcc(safeJSON(c.ircc, null), STG, ci, dates);
   // ----- derived view data for the monochrome layout -----
