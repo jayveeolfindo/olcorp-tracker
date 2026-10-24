@@ -105,6 +105,46 @@ function latestNews(c) {
   for (const k in NEWS) { const t = parse(sd[k]); if (t != null && t > bestT) { bestT = t; bestKey = k; } }
   return bestKey ? NEWS[bestKey] : 'There is an update on your application.';
 }
+// Shared client-facing email signature (matches Jayvee's standard Olcorp signature).
+const SIG_TEXT =
+  `Thanks and best regards,\n\n` +
+  `Jayvee Olfindo, RCIC\n` +
+  `Regulated Canadian Immigration Consultant | CICC Member: R711813\n` +
+  `Saskatchewan Immigration Consultant & Foreign Worker Recruiter: Licensed # 000996\n` +
+  `Olfindo Immigration Consulting Corporation (Olcorp.ca)\n` +
+  `A Notary Public and a Commissioner of Oaths in Saskatchewan\n` +
+  `My appointments expire on December 31, 2026\n` +
+  `Verify my Status with the Council:\n` +
+  `https://www.college-ic.ca/protecting-the-public/find-an-immigration-consultant\n` +
+  `Confidential Email: jayveeolfindo@olcorp.ca\n` +
+  `Office Phone: 639-554-9791\n` +
+  `Office Email: consulting@olcorp.ca\n` +
+  `Website: www.olcorp.ca\n` +
+  `Our Facebook Page: www.facebook.com/olcorp.ca\n` +
+  `Book an Appointment: www.olcorp.ca/consultant\n` +
+  `7th Floor, 2010 11th Ave, Regina, SK, Canada S4P 0J3\n\n` +
+  `This is a confidential email. If you are not the intended recipient of this message, please notify the sender immediately and delete this email from your system. Unauthorized use, disclosure, or copying of this message or its contents is strictly prohibited. Thank you.`;
+const SIG_HTML = `
+    <p style="margin:18px 0 0;font-size:14px;color:#0a0a0a">Thanks and best regards,</p>
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:14px;font-family:-apple-system,Segoe UI,Arial,sans-serif;font-size:13px;color:#0a0a0a;line-height:1.5"><tr><td>
+      <div style="font-weight:700;font-size:15px;color:#111">Jayvee Olfindo, RCIC</div>
+      <div>Regulated Canadian Immigration Consultant | CICC Member: R711813</div>
+      <div>Saskatchewan Immigration Consultant &amp; Foreign Worker Recruiter: Licensed # 000996</div>
+      <div>Olfindo Immigration Consulting Corporation (Olcorp.ca)</div>
+      <div style="font-style:italic;text-decoration:underline">A Notary Public and a Commissioner of Oaths in Saskatchewan</div>
+      <div style="font-style:italic;text-decoration:underline">My appointments expire on December 31, 2026</div>
+      <div style="margin-top:4px">Verify my Status with the Council:</div>
+      <div><a href="https://www.college-ic.ca/protecting-the-public/find-an-immigration-consultant" style="color:#1155cc">https://www.college-ic.ca/protecting-the-public/find-an-immigration-consultant</a></div>
+      <div><strong>Confidential Email:</strong> <a href="mailto:jayveeolfindo@olcorp.ca" style="color:#1155cc">jayveeolfindo@olcorp.ca</a></div>
+      <div>Office Phone: 639-554-9791</div>
+      <div>Office Email: <a href="mailto:consulting@olcorp.ca" style="color:#1155cc">consulting@olcorp.ca</a></div>
+      <div>Website: <a href="https://www.olcorp.ca" style="color:#1155cc">www.olcorp.ca</a></div>
+      <div>Our Facebook Page: <a href="https://www.facebook.com/olcorp.ca" style="color:#1155cc">www.facebook.com/olcorp.ca</a></div>
+      <div>Book an Appointment: <a href="https://www.olcorp.ca/consultant" style="color:#1155cc">www.olcorp.ca/consultant</a></div>
+      <div>7th Floor, 2010 11th Ave, Regina, SK, Canada S4P 0J3</div>
+      <div style="margin-top:12px"><img src="${BASE_URL}/logo.png" alt="Olcorp.ca" width="190" style="display:block;width:190px;max-width:190px;height:auto;border:0"></div>
+    </td></tr></table>
+    <p style="margin-top:14px;color:#6b6b6b;font-size:11px;line-height:1.5">This is a <strong>confidential email</strong>. If you are not the intended recipient of this message, please notify the sender immediately and delete this email from your system. Unauthorized use, disclosure, or copying of this message or its contents is strictly prohibited. Thank you.</p>`;
 // Email a given secure link to the client (used by notifications, resend, and the API).
 async function emailLink(c, link) {
   const first = String(c.full_name || '').trim().split(/\s+/)[0] || 'there';
@@ -115,7 +155,7 @@ async function emailLink(c, link) {
     `You can see the details on your secure tracker here:\n${link}\n\n` +
     `This is a secure, one-time link that expires in ${LINK_TTL_HOURS} hours. When you open it, you will confirm your date of birth to sign in.\n\n` +
     `If you have any questions, just reply to this email.\n\n` +
-    `Olcorp.ca Team\nOlfindo Immigration Consulting Corporation\nconsulting@olcorp.ca`;
+    SIG_TEXT;
   const html = `<div style="font-family:-apple-system,Segoe UI,Arial,sans-serif;font-size:14px;color:#0a0a0a;line-height:1.5">
     <p>Hi ${esc(first)},</p>
     <p style="font-size:15.5px;font-weight:600;color:#161616">${esc(news)}</p>
@@ -123,7 +163,7 @@ async function emailLink(c, link) {
     <p><a href="${link}" style="display:inline-block;background:#161616;color:#fff;text-decoration:none;padding:11px 20px;border-radius:999px;font-weight:700">View my application</a></p>
     <p style="color:#5b6b78;font-size:12.5px">This is a secure, one-time link that expires in ${LINK_TTL_HOURS} hours. When you open it, you will confirm your date of birth to sign in.</p>
     <p style="color:#5b6b78;font-size:12.5px">If you have any questions, just reply to this email.</p>
-    <p style="margin-top:18px">Olcorp.ca Team<br>Olfindo Immigration Consulting Corporation<br>consulting@olcorp.ca</p>
+    ${SIG_HTML}
   </div>`;
   return M.send({ to: c.client_email, subject, text, html });
 }
@@ -147,7 +187,7 @@ async function emailWelcome(c, link) {
     `Your privacy is protected. The tracker does not show any confidential details, no application or document numbers and no personal identifiers, only your milestones and their dates, so it is completely safe to open, even on a shared device.\n\n` +
     `This is a secure, one-time link that expires in ${LINK_TTL_HOURS} hours. When you open it, you will confirm your date of birth to sign in, and after that you can return any time at ${BASE_URL.replace(/^https?:\/\//,'')}.\n\n` +
     `If you have any questions, just reply to this email.\n\n` +
-    `Warm regards,\nOlcorp.ca Team`;
+    SIG_TEXT;
   const html = `<div style="font-family:-apple-system,Segoe UI,Arial,sans-serif;font-size:14px;color:#0a0a0a;line-height:1.55">
     <p>Hi ${esc(first)},</p>
     <p>Welcome, and thank you for trusting us with your application. We have set up a private tracker page just for you, so you can follow your file's progress any time, in the very same view your representative sees on our end.</p>
@@ -165,7 +205,7 @@ async function emailWelcome(c, link) {
     <p>Your privacy is protected. The tracker does not show any confidential details, no application or document numbers and no personal identifiers, only your milestones and their dates, so it is completely safe to open, even on a shared device.</p>
     <p style="color:#5b6b78;font-size:12.5px">This is a secure, one-time link that expires in ${LINK_TTL_HOURS} hours. When you open it, you will confirm your date of birth to sign in, and after that you can return any time at ${esc(BASE_URL.replace(/^https?:\/\//,''))}.</p>
     <p style="color:#5b6b78;font-size:12.5px">If you have any questions, just reply to this email.</p>
-    <p style="margin-top:18px">Warm regards,<br>Olcorp.ca Team</p>
+    ${SIG_HTML}
   </div>`;
   return M.send({ to: c.client_email, subject, text, html });
 }
