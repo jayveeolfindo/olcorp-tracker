@@ -80,7 +80,7 @@ function latestNews(c) {
   let sd = c && c.stage_dates;
   if (typeof sd === 'string') { try { sd = JSON.parse(sd || '{}'); } catch (e) { sd = {}; } }
   sd = sd || {};
-  if (c && c.current_stage === 'hold') return 'We have an update on your application and would like to connect with you about it.';
+  if (c && c.current_stage === 'hold') return { key: 'hold', text: 'We have an update on your application and would like to connect with you about it.' };
   const isEst = v => /^\s*est\.?\b/i.test(String(v || ''));
   const parse = v => { if (!v || isEst(v)) return null; let t = Date.parse(String(v)); if (isNaN(t)) t = Date.parse('1 ' + v); return isNaN(t) ? null : t; };
   const NEWS = {
@@ -103,7 +103,7 @@ function latestNews(c) {
   };
   let bestKey = null, bestT = -Infinity;
   for (const k in NEWS) { const t = parse(sd[k]); if (t != null && t > bestT) { bestT = t; bestKey = k; } }
-  return bestKey ? NEWS[bestKey] : 'There is an update on your application.';
+  return bestKey ? { key: bestKey, text: NEWS[bestKey] } : { key: null, text: 'There is an update on your application.' };
 }
 // Inline logo for the signature, embedded by Content-ID so it always renders in
 // email clients (Gmail/Outlook block remote image URLs and data URIs by default).
@@ -149,8 +149,23 @@ const SIG_HTML = `
 // Email a given secure link to the client (used by notifications, resend, and the API).
 async function emailLink(c, link) {
   const first = String(c.full_name || '').trim().split(/\s+/)[0] || 'there';
-  const news = latestNews(c);
+  const info = latestNews(c);
+  const news = info.text;
   const isHold = !!(c && c.current_stage === 'hold');
+  // For the Pre-Arrival milestone, point the client to their shared documents folder
+  // (where the IRCC invitation letter is saved), if a folder link is on file.
+  let sdates = c && c.stage_dates;
+  if (typeof sdates === 'string') { try { sdates = JSON.parse(sdates || '{}'); } catch (e) { sdates = {}; } }
+  sdates = sdates || {};
+  const folderUrl = sdates.folder_url || '';
+  const showFolder = info.key === 'prearrival' && !!folderUrl;
+  const folderText = showFolder
+    ? `Your invitation letter is saved in your shared documents folder. You can open it here:\n${folderUrl}\n\n`
+    : '';
+  const folderHtml = showFolder
+    ? `<p>Your invitation letter is saved in your shared documents folder:</p>
+    <p><a href="${esc(folderUrl)}" target="_blank" rel="noopener" style="display:inline-block;background:#fff;color:#161616;text-decoration:none;padding:10px 18px;border-radius:999px;font-weight:700;border:1.5px solid #161616">Open my documents folder</a></p>`
+    : '';
   const secureNote = `For your privacy, this is a secure one-time link that expires in ${LINK_TTL_HOURS} hours. Opening it simply asks you to confirm your date of birth, and then you're in.`;
   let subject, text, html;
   if (isHold) {
@@ -177,6 +192,7 @@ async function emailLink(c, link) {
     text = `Hi ${first},\n\n` +
       `There's movement on your journey to Canada, and I couldn't wait to share it with you. I know how long this road can feel, so moments like this are worth celebrating.\n\n` +
       `${news}\n\n` +
+      `${folderText}` +
       `Every milestone brings you one step closer, and you can follow the whole journey on your personal tracker: your timeline so far, where things stand today, and what comes next.\n${link}\n\n` +
       `${secureNote}\n\n` +
       `This means a great deal to you and your family, and it's a real privilege to walk through it with you. If you have any questions at all, just reply to this email. I'm always glad to hear from you.\n\n` +
@@ -185,6 +201,7 @@ async function emailLink(c, link) {
     <p>Hi ${esc(first)},</p>
     <p>There's movement on your journey to Canada, and I couldn't wait to share it with you. I know how long this road can feel, so moments like this are worth celebrating.</p>
     <p style="font-size:16.5px;font-weight:700;color:#161616">${esc(news)}</p>
+    ${folderHtml}
     <p>Every milestone brings you one step closer, and you can follow the whole journey on your personal tracker: your timeline so far, where things stand today, and what comes next.</p>
     <p><a href="${link}" style="display:inline-block;background:#161616;color:#fff;text-decoration:none;padding:11px 20px;border-radius:999px;font-weight:700">View my application</a></p>
     <p style="color:#5b6b78;font-size:12.5px">${esc(secureNote)}</p>
