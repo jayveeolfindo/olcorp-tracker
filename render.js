@@ -743,15 +743,24 @@ function appBlock(c, idx, active, ctx = {}) {
   const first = firstNameOf(c.full_name);
   const hasFamily = (dates.family === true || String(dates.family || '').toLowerCase() === 'true' || String(dates.family || '').toLowerCase() === 'yes');
   const reassure = recFor(track, onHold ? 'hold' : STG[ci].key);
-  // what happens next: the next stage after the current, with its estimate
+  // What happens next: the next step the client actually sees coming, i.e. the
+  // first still-upcoming step AFTER the current one in the date-ordered timeline.
+  // This is not always the next step in the fixed track order, since the
+  // concurrent checks are ordered by date (so a file in Background shows the
+  // Pre-Arrival letter next, not Final Decision).
   let nextStep = '', nextMeta = '', nextIcon = 'i-mail', nextFlag = 'No action needed from you';
   if (onHold) { nextStep = 'Final Decision Received'; nextMeta = 'Please contact our office so we can review the decision with you.'; nextIcon = 'i-message'; nextFlag = 'Please contact our office'; }
   else if (!isApproved) {
-    const ni = Math.min(ci + 1, STG.length - 1);
-    nextStep = STG[ni].t;
-    const est = estAt[ni];
+    const curPos = descs.findIndex(d => d.isCurrent);
+    let nd = null;
+    for (let j = (curPos >= 0 ? curPos + 1 : 0); j < descs.length; j++) {
+      if (!descs[j].isDone && !descs[j].isCurrent) { nd = descs[j]; break; }
+    }
+    if (!nd) nd = descs[descs.length - 1];
+    nextStep = nd.s.t;
+    const est = nd.estStr || estAt[nd.i] || '';
     nextMeta = est ? ('Expected around ' + String(est).replace(/^Est\.\s*/i, '') + '.') : 'We will update you as soon as there is movement.';
-    nextIcon = (STG[ni].key === 'copr' || STG[ni].key === 'issued') ? 'i-home' : 'i-mail';
+    nextIcon = (nd.s.key === 'copr' || nd.s.key === 'issued') ? 'i-home' : 'i-mail';
     if (STG[ci].key === 'intake') nextFlag = 'Please send your documents';
   }
   // ----- monochrome IRCC panel -----
