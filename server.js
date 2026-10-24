@@ -154,18 +154,20 @@ async function emailLink(c, link) {
   const news = latestNews(c);
   const subject = 'Update on your application';
   const text = `Hi ${first},\n\n` +
+    `I hope you're doing well. I wanted to share a quick update on your application with you.\n\n` +
     `${news}\n\n` +
-    `You can see the details on your secure tracker here:\n${link}\n\n` +
-    `This is a secure, one-time link that expires in ${LINK_TTL_HOURS} hours. When you open it, you will confirm your date of birth to sign in.\n\n` +
-    `If you have any questions, just reply to this email.\n\n` +
+    `Whenever you have a moment, you can see the full picture on your personal tracker: your timeline so far, where things stand today, and what comes next.\n${link}\n\n` +
+    `For your privacy, this is a secure one-time link that expires in ${LINK_TTL_HOURS} hours. Opening it simply asks you to confirm your date of birth, and then you're in.\n\n` +
+    `If you have any questions at all, or there's anything I can help you with, please just reply to this email. I'm always glad to hear from you.\n\n` +
     SIG_TEXT;
   const html = `<div style="font-family:-apple-system,Segoe UI,Arial,sans-serif;font-size:14px;color:#0a0a0a;line-height:1.5">
     <p>Hi ${esc(first)},</p>
+    <p>I hope you're doing well. I wanted to share a quick update on your application with you.</p>
     <p style="font-size:15.5px;font-weight:600;color:#161616">${esc(news)}</p>
-    <p>You can see the details on your secure tracker:</p>
+    <p>Whenever you have a moment, you can see the full picture on your personal tracker: your timeline so far, where things stand today, and what comes next.</p>
     <p><a href="${link}" style="display:inline-block;background:#161616;color:#fff;text-decoration:none;padding:11px 20px;border-radius:999px;font-weight:700">View my application</a></p>
-    <p style="color:#5b6b78;font-size:12.5px">This is a secure, one-time link that expires in ${LINK_TTL_HOURS} hours. When you open it, you will confirm your date of birth to sign in.</p>
-    <p style="color:#5b6b78;font-size:12.5px">If you have any questions, just reply to this email.</p>
+    <p style="color:#5b6b78;font-size:12.5px">For your privacy, this is a secure one-time link that expires in ${LINK_TTL_HOURS} hours. Opening it simply asks you to confirm your date of birth, and then you're in.</p>
+    <p>If you have any questions at all, or there's anything I can help you with, please just reply to this email. I'm always glad to hear from you.</p>
     ${SIG_HTML}
   </div>`;
   return M.send({ to: c.client_email, subject, text, html, attachments: [LOGO_ATTACHMENT] });
