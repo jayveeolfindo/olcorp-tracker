@@ -105,6 +105,9 @@ function latestNews(c) {
   for (const k in NEWS) { const t = parse(sd[k]); if (t != null && t > bestT) { bestT = t; bestKey = k; } }
   return bestKey ? NEWS[bestKey] : 'There is an update on your application.';
 }
+// Inline logo for the signature, embedded by Content-ID so it always renders in
+// email clients (Gmail/Outlook block remote image URLs and data URIs by default).
+const LOGO_ATTACHMENT = { filename: 'olcorp-logo.png', path: path.join(__dirname, 'public', 'logo.png'), cid: 'olcorplogo', contentDisposition: 'inline' };
 // Shared client-facing email signature (matches Jayvee's standard Olcorp signature).
 const SIG_TEXT =
   `Thanks and best regards,\n\n` +
@@ -142,7 +145,7 @@ const SIG_HTML = `
       <div>Our Facebook Page: <a href="https://www.facebook.com/olcorp.ca" style="color:#1155cc">www.facebook.com/olcorp.ca</a></div>
       <div>Book an Appointment: <a href="https://www.olcorp.ca/consultant" style="color:#1155cc">www.olcorp.ca/consultant</a></div>
       <div>7th Floor, 2010 11th Ave, Regina, SK, Canada S4P 0J3</div>
-      <div style="margin-top:12px"><img src="${BASE_URL}/logo.png" alt="Olcorp.ca" width="190" style="display:block;width:190px;max-width:190px;height:auto;border:0"></div>
+      <div style="margin-top:12px"><img src="cid:olcorplogo" alt="Olcorp.ca" width="190" style="display:block;width:190px;max-width:190px;height:auto;border:0"></div>
     </td></tr></table>
     <p style="margin-top:14px;color:#6b6b6b;font-size:11px;line-height:1.5">This is a <strong>confidential email</strong>. If you are not the intended recipient of this message, please notify the sender immediately and delete this email from your system. Unauthorized use, disclosure, or copying of this message or its contents is strictly prohibited. Thank you.</p>`;
 // Email a given secure link to the client (used by notifications, resend, and the API).
@@ -165,7 +168,7 @@ async function emailLink(c, link) {
     <p style="color:#5b6b78;font-size:12.5px">If you have any questions, just reply to this email.</p>
     ${SIG_HTML}
   </div>`;
-  return M.send({ to: c.client_email, subject, text, html });
+  return M.send({ to: c.client_email, subject, text, html, attachments: [LOGO_ATTACHMENT] });
 }
 // Convenience: issue a link and email it in one step.
 async function issueAndEmailLink(c) {
@@ -207,7 +210,7 @@ async function emailWelcome(c, link) {
     <p style="color:#5b6b78;font-size:12.5px">If you have any questions, just reply to this email.</p>
     ${SIG_HTML}
   </div>`;
-  return M.send({ to: c.client_email, subject, text, html });
+  return M.send({ to: c.client_email, subject, text, html, attachments: [LOGO_ATTACHMENT] });
 }
 
 // Saskatchewan-local date label, e.g. "Sep 18, 2026".
