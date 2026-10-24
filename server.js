@@ -152,24 +152,48 @@ const SIG_HTML = `
 async function emailLink(c, link) {
   const first = String(c.full_name || '').trim().split(/\s+/)[0] || 'there';
   const news = latestNews(c);
-  const subject = 'Update on your application';
-  const text = `Hi ${first},\n\n` +
-    `I hope you're doing well. I wanted to share a quick update on your application with you.\n\n` +
-    `${news}\n\n` +
-    `Whenever you have a moment, you can see the full picture on your personal tracker: your timeline so far, where things stand today, and what comes next.\n${link}\n\n` +
-    `For your privacy, this is a secure one-time link that expires in ${LINK_TTL_HOURS} hours. Opening it simply asks you to confirm your date of birth, and then you're in.\n\n` +
-    `If you have any questions at all, or there's anything I can help you with, please just reply to this email. I'm always glad to hear from you.\n\n` +
-    SIG_TEXT;
-  const html = `<div style="font-family:-apple-system,Segoe UI,Arial,sans-serif;font-size:14px;color:#0a0a0a;line-height:1.5">
+  const isHold = !!(c && c.current_stage === 'hold');
+  const secureNote = `For your privacy, this is a secure one-time link that expires in ${LINK_TTL_HOURS} hours. Opening it simply asks you to confirm your date of birth, and then you're in.`;
+  let subject, text, html;
+  if (isHold) {
+    subject = 'An update on your application';
+    text = `Hi ${first},\n\n` +
+      `I have an update on your application, and I wanted to reach out to you personally about it.\n\n` +
+      `${news}\n\n` +
+      `You can see where things stand any time on your personal tracker:\n${link}\n\n` +
+      `${secureNote}\n\n` +
+      `Please reply whenever works for you and we'll find a time to connect. I'm here to help, every step of the way.\n\n` +
+      SIG_TEXT;
+    html = `<div style="font-family:-apple-system,Segoe UI,Arial,sans-serif;font-size:14px;color:#0a0a0a;line-height:1.5">
     <p>Hi ${esc(first)},</p>
-    <p>I hope you're doing well. I wanted to share a quick update on your application with you.</p>
+    <p>I have an update on your application, and I wanted to reach out to you personally about it.</p>
     <p style="font-size:15.5px;font-weight:600;color:#161616">${esc(news)}</p>
-    <p>Whenever you have a moment, you can see the full picture on your personal tracker: your timeline so far, where things stand today, and what comes next.</p>
+    <p>You can see where things stand any time on your personal tracker:</p>
     <p><a href="${link}" style="display:inline-block;background:#161616;color:#fff;text-decoration:none;padding:11px 20px;border-radius:999px;font-weight:700">View my application</a></p>
-    <p style="color:#5b6b78;font-size:12.5px">For your privacy, this is a secure one-time link that expires in ${LINK_TTL_HOURS} hours. Opening it simply asks you to confirm your date of birth, and then you're in.</p>
-    <p>If you have any questions at all, or there's anything I can help you with, please just reply to this email. I'm always glad to hear from you.</p>
+    <p style="color:#5b6b78;font-size:12.5px">${esc(secureNote)}</p>
+    <p>Please reply whenever works for you and we'll find a time to connect. I'm here to help, every step of the way.</p>
     ${SIG_HTML}
   </div>`;
+  } else {
+    subject = 'An update on your journey to Canada';
+    text = `Hi ${first},\n\n` +
+      `There's movement on your journey to Canada, and I couldn't wait to share it with you. I know how long this road can feel, so moments like this are worth celebrating.\n\n` +
+      `${news}\n\n` +
+      `Every milestone brings you one step closer, and you can follow the whole journey on your personal tracker: your timeline so far, where things stand today, and what comes next.\n${link}\n\n` +
+      `${secureNote}\n\n` +
+      `This means a great deal to you and your family, and it's a real privilege to walk through it with you. If you have any questions at all, just reply to this email. I'm always glad to hear from you.\n\n` +
+      SIG_TEXT;
+    html = `<div style="font-family:-apple-system,Segoe UI,Arial,sans-serif;font-size:14px;color:#0a0a0a;line-height:1.5">
+    <p>Hi ${esc(first)},</p>
+    <p>There's movement on your journey to Canada, and I couldn't wait to share it with you. I know how long this road can feel, so moments like this are worth celebrating.</p>
+    <p style="font-size:16.5px;font-weight:700;color:#161616">${esc(news)}</p>
+    <p>Every milestone brings you one step closer, and you can follow the whole journey on your personal tracker: your timeline so far, where things stand today, and what comes next.</p>
+    <p><a href="${link}" style="display:inline-block;background:#161616;color:#fff;text-decoration:none;padding:11px 20px;border-radius:999px;font-weight:700">View my application</a></p>
+    <p style="color:#5b6b78;font-size:12.5px">${esc(secureNote)}</p>
+    <p>This means a great deal to you and your family, and it's a real privilege to walk through it with you. If you have any questions at all, just reply to this email. I'm always glad to hear from you.</p>
+    ${SIG_HTML}
+  </div>`;
+  }
   return M.send({ to: c.client_email, subject, text, html, attachments: [LOGO_ATTACHMENT] });
 }
 // Convenience: issue a link and email it in one step.
