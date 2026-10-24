@@ -113,7 +113,7 @@ const SIG_TEXT =
   `Thanks and best regards,\n\n` +
   `Jayvee Olfindo, RCIC\n` +
   `Regulated Canadian Immigration Consultant | CICC Member: R711813\n` +
-  `Saskatchewan Immigration Consultant & Foreign Worker Recruiter: Licensed # 000996\n` +
+  `Saskatchewan SINP Immigration Consultant & Foreign Worker Recruiter: Licensed # 000996\n` +
   `Olfindo Immigration Consulting Corporation (Olcorp.ca)\n` +
   `A Notary Public and a Commissioner of Oaths in Saskatchewan\n` +
   `My appointments expire on December 31, 2026\n` +
@@ -132,7 +132,7 @@ const SIG_HTML = `
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:14px;font-family:-apple-system,Segoe UI,Arial,sans-serif;font-size:13px;color:#0a0a0a;line-height:1.5"><tr><td>
       <div style="font-weight:700;font-size:15px;color:#111">Jayvee Olfindo, RCIC</div>
       <div>Regulated Canadian Immigration Consultant | CICC Member: R711813</div>
-      <div>Saskatchewan Immigration Consultant &amp; Foreign Worker Recruiter: Licensed # 000996</div>
+      <div>Saskatchewan SINP Immigration Consultant &amp; Foreign Worker Recruiter: Licensed # 000996</div>
       <div>Olfindo Immigration Consulting Corporation (Olcorp.ca)</div>
       <div style="font-style:italic;text-decoration:underline">A Notary Public and a Commissioner of Oaths in Saskatchewan</div>
       <div style="font-style:italic;text-decoration:underline">My appointments expire on December 31, 2026</div>
