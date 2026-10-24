@@ -73,18 +73,53 @@ function issueLink(c) {
   DB.issueToken(c.id, token, LINK_TTL_HOURS);
   return `${BASE_URL}/o/${token}`;
 }
+// The most recent real milestone on a file, phrased as plain news for the client.
+// Used to lead the update email with the specific thing that moved, instead of a
+// generic "there is an update". Picks the latest REAL (non-estimate) dated step.
+function latestNews(c) {
+  let sd = c && c.stage_dates;
+  if (typeof sd === 'string') { try { sd = JSON.parse(sd || '{}'); } catch (e) { sd = {}; } }
+  sd = sd || {};
+  if (c && c.current_stage === 'hold') return 'We have an update on your application and would like to connect with you about it.';
+  const isEst = v => /^\s*est\.?\b/i.test(String(v || ''));
+  const parse = v => { if (!v || isEst(v)) return null; let t = Date.parse(String(v)); if (isNaN(t)) t = Date.parse('1 ' + v); return isNaN(t) ? null : t; };
+  const NEWS = {
+    intake: 'We have started preparing your file.',
+    sinp: 'Your SINP application has been filed.',
+    nom: 'You have received your provincial nomination. Congratulations!',
+    eapr: 'Your application for permanent residence has been submitted to IRCC.',
+    submitted: 'Your application has been submitted to IRCC.',
+    aor: 'IRCC has acknowledged receipt of your application (AOR).',
+    bio: 'Your biometrics have been completed.',
+    prearrival: 'You have been invited to IRCC’s free Pre-Arrival Services.',
+    process: 'Your application is being actively reviewed by IRCC.',
+    medical: 'Your medical exam has passed.',
+    bg: 'Your background and security check is now underway.',
+    pr_portal_tab1: 'Your PR Portal access has been issued (Tab 1).',
+    pr_portal_tab2: 'Your PR Portal access has been issued (Tab 2).',
+    decision: 'Your application has reached the final decision stage.',
+    issued: 'Your application has been approved.',
+    copr: 'Your permanent residence has been confirmed. Congratulations!'
+  };
+  let bestKey = null, bestT = -Infinity;
+  for (const k in NEWS) { const t = parse(sd[k]); if (t != null && t > bestT) { bestT = t; bestKey = k; } }
+  return bestKey ? NEWS[bestKey] : 'There is an update on your application.';
+}
 // Email a given secure link to the client (used by notifications, resend, and the API).
 async function emailLink(c, link) {
   const first = String(c.full_name || '').trim().split(/\s+/)[0] || 'there';
+  const news = latestNews(c);
   const subject = 'Update on your application';
   const text = `Hi ${first},\n\n` +
-    `There is an update on your permanent residence application. You can view it here:\n${link}\n\n` +
+    `${news}\n\n` +
+    `You can see the details on your secure tracker here:\n${link}\n\n` +
     `This is a secure, one-time link that expires in ${LINK_TTL_HOURS} hours. When you open it, you will confirm your date of birth to sign in.\n\n` +
     `If you have any questions, just reply to this email.\n\n` +
     `Jayvee Olfindo, RCIC (R711813)\nOlfindo Immigration Consulting Corporation\nconsulting@olcorp.ca`;
   const html = `<div style="font-family:-apple-system,Segoe UI,Arial,sans-serif;font-size:14px;color:#0a0a0a;line-height:1.5">
     <p>Hi ${esc(first)},</p>
-    <p>There is an update on your permanent residence application. You can view it here:</p>
+    <p style="font-size:15.5px;font-weight:600;color:#161616">${esc(news)}</p>
+    <p>You can see the details on your secure tracker:</p>
     <p><a href="${link}" style="display:inline-block;background:#161616;color:#fff;text-decoration:none;padding:11px 20px;border-radius:999px;font-weight:700">View my application</a></p>
     <p style="color:#5b6b78;font-size:12.5px">This is a secure, one-time link that expires in ${LINK_TTL_HOURS} hours. When you open it, you will confirm your date of birth to sign in.</p>
     <p style="color:#5b6b78;font-size:12.5px">If you have any questions, just reply to this email.</p>
