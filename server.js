@@ -115,7 +115,7 @@ async function emailLink(c, link) {
     `You can see the details on your secure tracker here:\n${link}\n\n` +
     `This is a secure, one-time link that expires in ${LINK_TTL_HOURS} hours. When you open it, you will confirm your date of birth to sign in.\n\n` +
     `If you have any questions, just reply to this email.\n\n` +
-    `Jayvee Olfindo, RCIC (R711813)\nOlfindo Immigration Consulting Corporation\nconsulting@olcorp.ca`;
+    `Olcorp.ca Team\nOlfindo Immigration Consulting Corporation\nconsulting@olcorp.ca`;
   const html = `<div style="font-family:-apple-system,Segoe UI,Arial,sans-serif;font-size:14px;color:#0a0a0a;line-height:1.5">
     <p>Hi ${esc(first)},</p>
     <p style="font-size:15.5px;font-weight:600;color:#161616">${esc(news)}</p>
@@ -123,7 +123,7 @@ async function emailLink(c, link) {
     <p><a href="${link}" style="display:inline-block;background:#161616;color:#fff;text-decoration:none;padding:11px 20px;border-radius:999px;font-weight:700">View my application</a></p>
     <p style="color:#5b6b78;font-size:12.5px">This is a secure, one-time link that expires in ${LINK_TTL_HOURS} hours. When you open it, you will confirm your date of birth to sign in.</p>
     <p style="color:#5b6b78;font-size:12.5px">If you have any questions, just reply to this email.</p>
-    <p style="margin-top:18px">Jayvee Olfindo, RCIC (R711813)<br>Olfindo Immigration Consulting Corporation<br>consulting@olcorp.ca</p>
+    <p style="margin-top:18px">Olcorp.ca Team<br>Olfindo Immigration Consulting Corporation<br>consulting@olcorp.ca</p>
   </div>`;
   return M.send({ to: c.client_email, subject, text, html });
 }
