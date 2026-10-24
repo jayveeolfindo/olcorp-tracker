@@ -8,13 +8,13 @@
 //   - Temporary residence, no SINP ............ 'temp'      (permit steps only)
 
 const SINP_STAGES = [
-  { key: 'intake',   t: 'Intake & Document Collection', d: 'We gather and verify your identity documents, employment records, and forms.' },
+  { key: 'intake',   t: 'Representation Started', d: 'We gather and verify your identity documents, employment records, and forms.' },
   { key: 'sinp',     t: 'SINP Application Filed',        d: 'Your provincial nomination application is submitted to Saskatchewan.' },
   { key: 'nom',      t: 'Provincial Nomination',         d: 'Saskatchewan issues the nomination certificate.' },
   { key: 'eapr',     t: 'e-APR Submitted to IRCC',       d: 'Permanent residence application filed federally in the PR Portal.' },
   { key: 'aor',      t: 'Acknowledgement of Receipt (AOR)', d: 'IRCC acknowledges receipt and links your file. This appears once the AOR is issued.' },
   { key: 'bio',      t: 'Biometrics',                    d: 'Fingerprints and photo captured at a collection point.' },
-  { key: 'prearrival', t: 'Invitation to Pre-Arrival Services Letter Received', d: 'IRCC sends a letter inviting you to free Pre-Arrival Services, settlement support to help you prepare before you land in Canada.' },
+  { key: 'prearrival', t: 'Invitation to Pre-Arrival Services Letter', d: 'IRCC sends a letter inviting you to free Pre-Arrival Services, settlement support to help you prepare before you land in Canada.' },
   { key: 'medical',  t: 'Medical Exam',                  d: 'Review of your medical history.' },
   { key: 'bg',       t: 'Background & Security Check',    d: 'Right after your biometrics appointment, IRCC reviews your background and admissibility to Canada. This stage is routine and can take some time.' },
   { key: 'decision', t: 'Final Decision',                d: 'IRCC issues the decision on your application.' },
@@ -22,11 +22,11 @@ const SINP_STAGES = [
 ];
 
 const EXPRESS_STAGES = [
-  { key: 'intake',   t: 'Intake & Document Collection', d: 'We gather and verify your identity documents, employment records, and forms.' },
+  { key: 'intake',   t: 'Representation Started', d: 'We gather and verify your identity documents, employment records, and forms.' },
   { key: 'eapr',     t: 'e-APR Submitted to IRCC',       d: 'Permanent residence application filed federally in the PR Portal.' },
   { key: 'aor',      t: 'Acknowledgement of Receipt (AOR)', d: 'IRCC acknowledges receipt and links your file. This appears once the AOR is issued.' },
   { key: 'bio',      t: 'Biometrics',                    d: 'Fingerprints and photo captured at a collection point.' },
-  { key: 'prearrival', t: 'Invitation to Pre-Arrival Services Letter Received', d: 'IRCC sends a letter inviting you to free Pre-Arrival Services, settlement support to help you prepare before you land in Canada.' },
+  { key: 'prearrival', t: 'Invitation to Pre-Arrival Services Letter', d: 'IRCC sends a letter inviting you to free Pre-Arrival Services, settlement support to help you prepare before you land in Canada.' },
   { key: 'medical',  t: 'Medical Exam',                  d: 'Review of your medical history.' },
   { key: 'bg',       t: 'Background & Security Check',    d: 'Right after your biometrics appointment, IRCC reviews your background and admissibility to Canada. This stage is routine and can take some time.' },
   { key: 'decision', t: 'Final Decision',                d: 'IRCC issues the decision on your application.' },
@@ -35,7 +35,7 @@ const EXPRESS_STAGES = [
 
 // Temporary residence (work permit / study permit / visitor record extension), SINP-based.
 const TEMP_SINP_STAGES = [
-  { key: 'intake',   t: 'Intake & Document Collection', d: 'We gather and verify your identity documents, employment records, and forms.' },
+  { key: 'intake',   t: 'Representation Started', d: 'We gather and verify your identity documents, employment records, and forms.' },
   { key: 'support',  t: 'SINP Work Permit Support Letter', d: 'Saskatchewan issues the work permit support letter.' },
   { key: 'submitted',t: 'Application Submitted to IRCC', d: 'Your permit application is filed with IRCC.' },
   { key: 'bio',      t: 'Biometrics',                    d: 'Fingerprints and photo captured (if required).' },
@@ -46,7 +46,7 @@ const TEMP_SINP_STAGES = [
 
 // Temporary residence, no SINP support step.
 const TEMP_STAGES = [
-  { key: 'intake',   t: 'Intake & Document Collection', d: 'We gather and verify your identity documents, employment records, and forms.' },
+  { key: 'intake',   t: 'Representation Started', d: 'We gather and verify your identity documents, employment records, and forms.' },
   { key: 'submitted',t: 'Application Submitted to IRCC', d: 'Your permit application is filed with IRCC.' },
   { key: 'bio',      t: 'Biometrics',                    d: 'Fingerprints and photo captured (if required).' },
   { key: 'process',  t: 'Application in Process',        d: 'IRCC reviews eligibility and admissibility.' },
@@ -56,7 +56,7 @@ const TEMP_STAGES = [
 
 // Study Permit (new application, not an extension). Application number starts with S.
 const STUDY_STAGES = [
-  { key: 'intake',   t: 'Intake & Document Collection', d: 'We gather and verify your identity documents, letter of acceptance, proof of funds, and forms.' },
+  { key: 'intake',   t: 'Representation Started', d: 'We gather and verify your identity documents, letter of acceptance, proof of funds, and forms.' },
   { key: 'submitted',t: 'Application Submitted to IRCC', d: 'Your study permit application is filed with IRCC.' },
   { key: 'bio',      t: 'Biometrics',                    d: 'Fingerprints and photo captured at a collection point.' },
   { key: 'medical',  t: 'Medical Exam (If Required)',    d: 'Immigration medical completed with a panel physician, if your program or length of stay requires it.' },
@@ -67,7 +67,7 @@ const STUDY_STAGES = [
 
 // Visitor Visa (Temporary Resident Visa / TRV). Application number starts with V.
 const VISITOR_VISA_STAGES = [
-  { key: 'intake',   t: 'Intake & Document Collection', d: 'We gather and verify your identity documents, purpose of travel, and proof of ties and funds.' },
+  { key: 'intake',   t: 'Representation Started', d: 'We gather and verify your identity documents, purpose of travel, and proof of ties and funds.' },
   { key: 'submitted',t: 'Application Submitted to IRCC', d: 'Your visitor visa application is filed with IRCC.' },
   { key: 'bio',      t: 'Biometrics',                    d: 'Fingerprints and photo captured at a collection point.' },
   { key: 'process',  t: 'Application in Process',        d: 'IRCC reviews eligibility and admissibility.' },
@@ -77,7 +77,7 @@ const VISITOR_VISA_STAGES = [
 
 // Super Visa (parent/grandparent long-stay visa). Medical always required. Application number starts with V.
 const SUPER_VISA_STAGES = [
-  { key: 'intake',   t: 'Intake & Document Collection', d: 'We gather and verify your identity documents, invitation, proof of funds, and insurance.' },
+  { key: 'intake',   t: 'Representation Started', d: 'We gather and verify your identity documents, invitation, proof of funds, and insurance.' },
   { key: 'submitted',t: 'Application Submitted to IRCC', d: 'Your super visa application is filed with IRCC.' },
   { key: 'bio',      t: 'Biometrics',                    d: 'Fingerprints and photo captured at a collection point.' },
   { key: 'medical',  t: 'Medical Exam',                  d: 'Immigration medical completed with a panel physician (required for the super visa).' },
@@ -88,7 +88,7 @@ const SUPER_VISA_STAGES = [
 
 // Stay Extension Application (extend your stay as a visitor / visitor record). Application number starts with V.
 const STAY_EXT_STAGES = [
-  { key: 'intake',   t: 'Intake & Document Collection', d: 'We gather and verify your identity documents, current status, and reason for extending.' },
+  { key: 'intake',   t: 'Representation Started', d: 'We gather and verify your identity documents, current status, and reason for extending.' },
   { key: 'submitted',t: 'Application Submitted to IRCC', d: 'Your application to extend your stay is filed with IRCC.' },
   { key: 'process',  t: 'Application in Process',        d: 'IRCC reviews your request. You may remain in Canada under maintained status while it is processed.' },
   { key: 'decision', t: 'Final Decision',                d: 'IRCC issues the decision on your application.' },
@@ -111,7 +111,7 @@ const TRACKS = {
 // Union of every step across all tracks, deduped by key, in a sensible order.
 // Used by the admin form so a file on any track can set its stage and dates.
 const ALL_STAGES = [
-  { key: 'intake',   t: 'Intake & Document Collection' },
+  { key: 'intake',   t: 'Representation Started' },
   { key: 'sinp',     t: 'SINP Application Filed' },
   { key: 'nom',      t: 'Provincial Nomination' },
   { key: 'eapr',     t: 'e-APR Submitted to IRCC' },
@@ -119,7 +119,7 @@ const ALL_STAGES = [
   { key: 'support',  t: 'SINP Work Permit Support Letter' },
   { key: 'submitted',t: 'Application Submitted to IRCC' },
   { key: 'bio',      t: 'Biometrics' },
-  { key: 'prearrival', t: 'Invitation to Pre-Arrival Services Letter Received' },
+  { key: 'prearrival', t: 'Invitation to Pre-Arrival Services Letter' },
   { key: 'medical',  t: 'Medical Exam' },
   { key: 'process',  t: 'Application in Process' },
   { key: 'bg',       t: 'Background & Security Check' },

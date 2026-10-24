@@ -71,9 +71,9 @@ h1{font-size:24px;font-weight:800;letter-spacing:-.5px;margin:14px 2px 6px}
 .step .when{font-family:var(--mono);font-size:10.5px;letter-spacing:.6px;color:var(--faint);margin-top:6px;text-transform:uppercase}
 .step.current .when{color:var(--green)}
 .step .when.est{color:#b7791f}
-.substep{display:flex;align-items:baseline;gap:8px;margin-top:7px;font-size:11.5px;color:var(--muted)}
+.substep{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 8px;margin-top:7px;font-size:11.5px;color:var(--muted)}
 .substep .subdot{width:5px;height:5px;border-radius:50%;background:var(--green);flex:0 0 5px;align-self:center}
-.substep .subdate{font-family:var(--mono);font-size:10px;letter-spacing:.5px;color:var(--faint);text-transform:uppercase}
+.substep .subdate{margin-left:auto;font-family:var(--mono);font-size:10px;letter-spacing:.5px;color:var(--faint);text-transform:uppercase;white-space:nowrap}
 .estnote{margin:0 22px 18px;font-size:11px;line-height:1.45;color:#b7791f;font-style:italic}
 .cols{display:grid;grid-template-columns:1fr .82fr;gap:14px;margin-top:14px}
 @media(max-width:820px){.cols{grid-template-columns:1fr}}
@@ -326,6 +326,157 @@ function reconcileIrcc(ircc, STG, ci, dates) {
   return { rows, messages };
 }
 
+// ===== Monochrome client-tracker theme (client-facing pages only; admin/login keep page()) =====
+const MONO_CSS = `
+:root{
+  --bg:#ffffff; --ink:#141414; --ink-soft:#333333; --muted:#6e6e6e; --faint:#a2a2a2;
+  --line:#ececec; --line2:#f4f4f4; --chip:#f5f5f5; --fill:#141414;
+  --radius:18px;
+  --shadow:0 1px 2px rgba(0,0,0,.03),0 10px 28px rgba(0,0,0,.05);
+  --shadow-lg:0 2px 6px rgba(0,0,0,.04),0 22px 50px rgba(0,0,0,.08);
+  --f:"Jost",-apple-system,system-ui,"Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f);font-weight:400;-webkit-font-smoothing:antialiased;line-height:1.5}
+.wrap{max-width:720px;margin:0 auto;padding:0 16px 56px}
+
+.icon{width:19px;height:19px;flex:0 0 auto;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;display:inline-block;vertical-align:middle}
+
+
+.brand{text-align:center;padding:24px 0 6px}
+.brand .logo{width:310px;max-width:80%;height:auto;display:block;margin:0 auto 24px}
+.kicker{font-size:10px;font-weight:500;letter-spacing:2.5px;color:var(--muted);text-transform:uppercase;margin-top:6px}
+.cicc{display:inline-flex;align-items:center;gap:7px;font-size:10.5px;font-weight:600;letter-spacing:.3px;color:var(--ink-soft);background:var(--chip);border:1px solid var(--line);padding:7px 13px;border-radius:999px;margin-top:14px}
+.cicc .icon{width:14px;height:14px}
+
+.greet{padding:20px 2px 16px}
+.greet h1{margin:0;font-size:26px;font-weight:500;letter-spacing:-.5px}
+.greet p{margin:5px 0 0;color:var(--muted);font-size:13.5px}
+
+.card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.card + .card{margin-top:14px}
+
+.hero{overflow:hidden;box-shadow:var(--shadow-lg)}
+.hero-top{display:flex;gap:18px;align-items:center;padding:22px 22px 18px}
+@media(max-width:520px){.hero-top{flex-direction:column;align-items:flex-start;gap:16px}}
+.hero-info{flex:1;min-width:0}
+.apptype{font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+.hero h2{margin:7px 0 2px;font-size:23px;font-weight:500;letter-spacing:-.3px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:500;letter-spacing:.5px;padding:6px 11px;border-radius:8px;background:var(--chip);border:1px solid var(--line);color:var(--ink-soft)}
+.chip .icon{width:13px;height:13px;color:var(--muted)}
+.ring{position:relative;width:116px;height:116px;flex:0 0 116px}
+.ring svg.r{transform:rotate(-90deg)}
+.ring .pct{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring .pct b{font-size:27px;font-weight:500;letter-spacing:-1px}
+.ring .pct span{font-size:8.5px;font-weight:500;letter-spacing:1.4px;color:var(--faint);text-transform:uppercase;margin-top:2px}
+.banner{display:flex;align-items:center;gap:12px;padding:15px 22px;border-top:1px solid var(--line2);background:#fafafa}
+.banner .dot{width:9px;height:9px;border-radius:50%;background:var(--ink);box-shadow:0 0 0 4px rgba(20,20,20,.08);flex:0 0 9px}
+.banner .btxt{flex:1;min-width:0}
+.banner .blabel{font-size:9px;font-weight:600;letter-spacing:1.6px;text-transform:uppercase;color:var(--faint)}
+.banner .bval{font-size:15.5px;font-weight:600;margin-top:2px}
+.banner .bsync{font-size:9.5px;font-weight:500;letter-spacing:.5px;color:var(--faint);white-space:nowrap}
+
+.celebrate{background:var(--ink);color:#fff;padding:28px 22px;text-align:center}
+.celebrate .emblem{width:54px;height:54px;margin:0 auto 12px;border-radius:50%;border:1.5px solid rgba(255,255,255,.4);display:grid;place-items:center}
+.celebrate .emblem .icon{width:26px;height:26px;stroke:#fff;stroke-width:1.5}
+.celebrate h2{margin:4px 0 5px;font-size:23px;font-weight:500;letter-spacing:-.3px}
+.celebrate p{margin:0 auto;max-width:390px;font-size:13.5px;opacity:.82;font-weight:300}
+
+.next{display:flex;gap:14px;align-items:flex-start;padding:18px 20px}
+.next .ic{flex:0 0 42px;height:42px;border-radius:12px;background:var(--chip);border:1px solid var(--line);color:var(--ink);display:grid;place-items:center}
+.next .ic .icon{width:21px;height:21px}
+.next .ntxt{flex:1;min-width:0}
+.next .nlabel{font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--faint)}
+.next .nstep{font-size:15.5px;font-weight:600;margin:4px 0 2px}
+.next .nmeta{font-size:12.5px;color:var(--muted)}
+.pillflag{display:inline-flex;align-items:center;gap:6px;margin-top:11px;font-size:11.5px;font-weight:600;padding:6px 12px;border-radius:999px;border:1px solid var(--line);color:var(--ink-soft);background:var(--chip)}
+.pillflag .icon{width:13px;height:13px}
+
+.sec-h{display:flex;align-items:center;justify-content:space-between;padding:18px 22px 6px}
+.sec-h .t{font-size:13.5px;font-weight:600;letter-spacing:.2px}
+.sec-h .meta{font-size:9.5px;font-weight:500;letter-spacing:1px;color:var(--faint);text-transform:uppercase}
+
+.steps{padding:4px 22px 18px}
+.step{display:flex;gap:16px;position:relative;padding:12px 0}
+.step:not(:last-child)::before{content:"";position:absolute;left:14px;top:38px;bottom:-4px;width:1.5px;background:var(--line)}
+.step.done:not(:last-child)::before{background:var(--ink)}
+.step.current:not(:last-child)::before{background:linear-gradient(var(--ink),var(--line))}
+.node{width:30px;height:30px;border-radius:50%;flex:0 0 30px;display:grid;place-items:center;font-size:12px;font-weight:600;border:1.5px solid var(--line);background:#fff;color:var(--faint);z-index:1}
+.node .icon{width:16px;height:16px;stroke:#fff;stroke-width:2.6;display:block}
+.step.done .node{background:var(--ink);border-color:var(--ink);color:#fff}
+.step.current .node{background:#fff;border:2px solid var(--ink);color:var(--ink);box-shadow:0 0 0 5px rgba(20,20,20,.06)}
+.step .body{padding-top:3px;min-width:0}
+.step .t{font-size:14.5px;font-weight:600}
+.step.pending .t{color:var(--faint)}
+.step .d{font-size:12.5px;color:var(--muted);margin-top:3px;font-weight:400}
+.when{display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:10px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--ink-soft);background:var(--chip);padding:4px 10px;border-radius:7px}
+.when.cur{color:var(--ink);background:#ededed}
+.when.est{color:var(--faint);background:#fff;border:1px dashed var(--line)}
+.substep{display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;margin-top:9px;font-size:12px;color:var(--muted)}
+.substep .subdot{width:5px;height:5px;border-radius:50%;background:var(--ink);flex:0 0 5px}
+.substep .subdot.est{background:#fff;border:1px solid var(--faint)}
+.substep .subdate{margin-left:auto;font-size:10px;font-weight:600;letter-spacing:.6px;color:var(--faint);text-transform:uppercase;white-space:nowrap}
+.msg-h{padding:16px 22px 2px;font-size:9.5px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--faint)}
+.msg{display:flex;flex-direction:column;gap:3px;padding:12px 22px;border-top:1px solid var(--line2);font-size:12.5px;line-height:1.5;color:var(--ink-soft)}
+.msg .md{font-size:9.5px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--faint)}
+
+.irow{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:13px 22px;border-top:1px solid var(--line2);font-size:13.5px}
+.irow:first-of-type{border-top:0}
+.il{color:var(--muted)}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;padding:4px 11px;border-radius:999px}
+.badge.done{background:var(--ink);color:#fff}
+.badge.prog{background:#fff;color:var(--ink);border:1.5px solid var(--ink)}
+.badge.wait{background:var(--chip);color:var(--faint)}
+.badge .icon{width:12px;height:12px;stroke-width:2.6}
+
+.reassure{display:flex;gap:13px;align-items:center;padding:16px 20px;background:#fafafa;border:1px solid var(--line);border-radius:var(--radius);margin-top:14px}
+.reassure .ic{flex:0 0 auto;color:var(--ink)}
+.reassure .ic .icon{width:22px;height:22px}
+.reassure .rt{font-size:12.5px;color:var(--muted);line-height:1.55}
+.reassure .rt b{display:block;color:var(--ink);font-size:13px;margin-bottom:2px;font-weight:600}
+
+.consult{display:flex;gap:14px;align-items:center;padding:18px 20px}
+.avatar{flex:0 0 50px;height:50px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-size:16px;font-weight:500;letter-spacing:1px}
+.consult .cn{font-weight:600;font-size:15px}
+.consult .cr{font-size:10.5px;font-weight:500;letter-spacing:.6px;color:var(--muted);margin-top:2px}
+.consult .cm{font-size:12px;color:var(--muted);margin-top:4px}
+.actions{display:flex;gap:10px;padding:0 20px 18px;flex-wrap:wrap}
+.btn{flex:1;min-width:150px;text-align:center;border-radius:999px;padding:14px 16px;font-size:13px;font-weight:600;text-decoration:none;cursor:pointer;border:0;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn.primary{background:var(--ink);color:#fff}
+.btn.ghost{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
+.btn .icon{width:17px;height:17px}
+
+.foot{text-align:center;font-size:11px;color:var(--faint);margin-top:24px;line-height:1.8;font-weight:400}
+.foot .seal{font-weight:600;color:var(--muted);letter-spacing:.3px}
+.foot .lock{display:inline-flex;align-items:center;gap:5px;margin-top:4px}
+.foot .lock .icon{width:12px;height:12px}
+`;
+const MONO_DEFS = `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <g id="i-check"><path d="M6 11.3l4 4 8-9"/></g>
+  <g id="i-shield"><path d="M12 3l7 3v5.5c0 4-2.9 7-7 8.5-4.1-1.5-7-4.5-7-8.5V6z"/><path d="M9 12l2 2 4-4"/></g>
+  <g id="i-mail"><rect x="3" y="5" width="18" height="14" rx="2.2"/><path d="m3.5 7.5 8.5 5.5 8.5-5.5"/></g>
+  <g id="i-home"><path d="M3 10.5 12 4l9 6.5"/><path d="M5 9.5V20h14V9.5"/><path d="M10 20v-5h4v5"/></g>
+  <g id="i-eye"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></g>
+  <g id="i-spark"><path d="M12 3l1.7 4.8L18.5 9.5l-4.8 1.7L12 16l-1.7-4.8L5.5 9.5l4.8-1.7z"/><path d="M19 14.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/></g>
+  <g id="i-message"><path d="M21 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20.5l1.6-5.3A8.5 8.5 0 1 1 21 11.5z"/></g>
+  <g id="i-userplus"><path d="M15 20.5v-1.8a3.8 3.8 0 0 0-3.8-3.8H6.3A3.8 3.8 0 0 0 2.5 18.7v1.8"/><circle cx="8.7" cy="7.2" r="3.8"/><path d="M19 8v5M21.5 10.5h-5"/></g>
+  <g id="i-doc"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></g>
+  <g id="i-lock"><rect x="4.5" y="10.5" width="15" height="10" rx="2.2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></g>
+  <g id="i-folder"><path d="M3 7.5a2 2 0 0 1 2-2h3.8l2 2H19a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></g>
+  <g id="i-checklist"><rect x="4.5" y="5" width="15" height="16" rx="2.2"/><path d="M9 5V3.8h6V5"/><path d="m8.3 13 2 2 4-4.2"/></g>
+</defs></svg>`;
+const useIcon = (id) => `<svg class="icon" viewBox="0 0 24 24"><use href="#${id}"/></svg>`;
+const firstNameOf = (full) => String(full || '').trim().split(/\s+/)[0] || '';
+function monoPage(title, body) {
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${esc(title)}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>${MONO_CSS}</style></head><body>${MONO_DEFS}<div class="wrap">${body}</div></body></html>`;
+}
+
 function appBlock(c, idx, active, ctx = {}) {
   const track = trackFor(c.stream);
   const STG = stagesFor(track);
@@ -356,7 +507,35 @@ function appBlock(c, idx, active, ctx = {}) {
   // forward from the most recent REAL milestone on file (or today) using typical
   // IRCC stage gaps, and never display an estimate earlier than next month.
   const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const GAP = { sinp: 1, nom: 1, eapr: 1, aor: 7, support: 1, submitted: 1, bio: 0, prearrival: 0, medical: 0, process: 1, bg: 2, decision: 3, issued: 1, copr: 1 };
+  // Empirical stage gaps, in DAYS, measured from Olcorp's own PR files (median day
+  // gap between the two milestones; n = number of files it is based on). Weak ones
+  // (n < 5) fall back to a conservative assumption, noted inline. Each step is
+  // anchored (below) to the milestone the offset is measured from, not blindly to
+  // the previous step, so the concurrent IRCC checks (pre-arrival, medical,
+  // background, final decision) all project from biometrics instead of stacking.
+  const OFF = {
+    sinp: 14,        // assumption (intake -> SINP filing)
+    nom: 13,         // n=36  SINP filed -> nomination
+    eapr: 13,        // n=36  nomination -> e-APR
+    support: 30,     // assumption
+    aor: 205,        // n=10  e-APR -> AOR (~7 months)
+    submitted: 14,   // assumption (temp)
+    bio: 5,          // n=10  AOR -> biometrics
+    prearrival: 37,  // n=9   biometrics -> pre-arrival letter
+    medical: 56,     // n=6   biometrics -> medical
+    process: 30,     // assumption (temp)
+    bg: 60,          // assumption (concurrent with the other checks)
+    decision: 57,    // n=7   biometrics -> final decision
+    issued: 21,      // assumption (temp)
+    copr: 56         // n=3, flagged by Jayvee as running ~2 months (was assuming 1)
+  };
+  const bioInTrack = STG.some(s => s.key === 'bio');
+  // Each step anchors to the milestone its offset was measured from.
+  const anchorKeyOf = (key, idx) => {
+    if (bioInTrack && (key === 'prearrival' || key === 'medical' || key === 'bg' || key === 'decision')) return 'bio';
+    if (key === 'copr' || key === 'issued') return 'decision';
+    return idx > 0 ? STG[idx - 1].key : null;
+  };
   const parseLoose = v => {
     if (!v) return null;
     const s = String(v).replace(/^\s*est\.?\s*/i, '').trim();
@@ -366,37 +545,81 @@ function appBlock(c, idx, active, ctx = {}) {
   };
   const addMonths = (d, n) => { const x = new Date(d); x.setDate(1); x.setMonth(x.getMonth() + n); return x; };
   const fmtEst = d => 'Est. ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear();
+  // Background & Security Check timing, PR files only, when the step has no real
+  // date on file. The background check starts right after biometrics and clears
+  // just before a decision, so derive its date from the file's current stage:
+  //   - At the Final Decision stage: show it DONE, dated one day before the Final
+  //     Decision date (you cannot reach a decision without background clearing).
+  //   - At the Background stage: show it IN PROGRESS, started the day after
+  //     biometrics finished.
+  // Files earlier than these are left untouched (a dateless check reads as pending).
+  {
+    const fmtMD = d => MONTHS[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+    const atDecision = !!STG[ci] && STG[ci].key === 'decision';
+    const atBg = !!STG[ci] && STG[ci].key === 'bg';
+    const bgReal = dates.bg && !isEstV(dates.bg);
+    const decReal = dates.decision && !isEstV(dates.decision);
+    const bioReal = dates.bio && !isEstV(dates.bio);
+    if (isPR && !bgReal) {
+      if (atDecision && decReal) {
+        const d = parseLoose(dates.decision);
+        if (d) { const b = new Date(d); b.setDate(b.getDate() - 1); dates.bg = fmtMD(b); }
+      } else if (atBg && bioReal) {
+        const d = parseLoose(dates.bio);
+        if (d) { const b = new Date(d); b.setDate(b.getDate() + 1); dates.bg = fmtMD(b); }
+      }
+    }
+  }
+  // Project each not-yet-reached step by chaining the empirical day offsets from
+  // the last real milestone. estDate(idx) returns a step's real date when on file,
+  // otherwise its anchor's date (resolved recursively) plus that step's offset.
   const estAt = {};
+  const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
   {
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
-    let anchor = null;
-    for (let j = 0; j <= ci; j++) {
+    let latest = null;
+    for (let j = 0; j < STG.length; j++) {
       const dv = dates[STG[j].key];
-      if (dv && !isEstV(dv)) { const p = parseLoose(dv); if (p && (!anchor || p > anchor)) anchor = p; }
+      if (dv && !isEstV(dv)) { const p = parseLoose(dv); if (p && (!latest || p > latest)) latest = p; }
     }
-    let cursor = anchor || today;
+    const latestRealOrToday = latest || today;
+    const memo = {};
+    const estDate = (idx) => {
+      if (memo[idx]) return memo[idx];
+      const key = STG[idx].key;
+      const real = dates[key] && !isEstV(dates[key]) ? parseLoose(dates[key]) : null;
+      if (real) { memo[idx] = real; return real; }
+      const ak = anchorKeyOf(key, idx);
+      let base = null;
+      if (ak) { const ai = STG.findIndex(s => s.key === ak); if (ai >= 0 && ai !== idx) base = estDate(ai); }
+      if (!base) base = latestRealOrToday;
+      const d = addDays(base, OFF[key] != null ? OFF[key] : 30);
+      memo[idx] = d; return d;
+    };
+    let prev = null;
     for (let j = ci + 1; j < STG.length; j++) {
-      cursor = addMonths(cursor, GAP[STG[j].key] != null ? GAP[STG[j].key] : 1);
-      if (cursor < nextMonth) cursor = new Date(nextMonth);
-      estAt[j] = fmtEst(cursor);
+      let d = estDate(j);
+      if (d < nextMonth) d = new Date(nextMonth);
+      if (prev && d < prev) d = new Date(prev); // keep the column non-decreasing
+      prev = d;
+      estAt[j] = fmtEst(d);
     }
   }
-  // Pre-Arrival Services estimate: the invitation letter typically arrives about
-  // 2 to 6 weeks after AOR and biometrics. Anchor to the later of those two real
-  // dates and show a single estimated month (the middle of that window), never a
-  // past month, and only while the file is still in process (not yet at Final
-  // Decision). Shown on the Pre-Arrival step whenever it has no real date.
+  // Pre-Arrival Services estimate: the invitation letter runs about 5 weeks after
+  // biometrics in Olcorp's files (n=9), or about 6 weeks after AOR when biometrics
+  // is not yet dated. Shown on the Pre-Arrival step whenever it has no real date,
+  // only while the file is still in process (not yet at Final Decision), never a
+  // past month.
   let preEst = '';
   {
     const decI = STG.findIndex(s => s.key === 'decision');
     const beforeDecision = decI < 0 || ci < decI;
-    const anchors = [parseLoose(dates.aor), parseLoose(dates.bio)].filter(Boolean);
-    if (beforeDecision && anchors.length) {
-      const anchor = new Date(Math.max.apply(null, anchors));
+    const bioD = parseLoose(dates.bio), aorD = parseLoose(dates.aor);
+    if (beforeDecision && (bioD || aorD)) {
       const today = new Date(); today.setHours(0, 0, 0, 0);
       const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
-      let est = addMonths(anchor, 1);
+      let est = bioD ? addDays(bioD, 37) : addDays(aorD, 42);
       if (est < nextMonth) est = new Date(nextMonth);
       preEst = fmtEst(est);
     }
@@ -418,8 +641,14 @@ function appBlock(c, idx, active, ctx = {}) {
     const hasRealDate = dv && !isEstV(dv);
     const VERIFY_STEP = (s.key === 'prearrival' || s.key === 'medical' || s.key === 'bg');
     const datelessOptional = VERIFY_STEP && (i < ci) && !hasRealDate;
-    const isDone = (i < ci || terminalDone) && !datelessOptional;
-    const cls = datelessOptional ? 'pending' : (isDone ? 'done' : (i === ci ? 'current' : 'pending'));
+    // A Final Decision date means pre-arrival has already played out: an Invitation
+    // to Pre-Arrival Services that never arrived will not arrive now. So at the Final
+    // Decision stage, show a dateless Pre-Arrival step as completed (ticked) with no
+    // date, rather than leaving it pending or showing an estimate.
+    const atDecisionStage = !!STG[ci] && STG[ci].key === 'decision';
+    const preArrivalBlankDone = isPR && !onHold && atDecisionStage && s.key === 'prearrival' && !hasRealDate;
+    const isDone = preArrivalBlankDone || ((i < ci || terminalDone) && !datelessOptional);
+    const cls = preArrivalBlankDone ? 'done' : (datelessOptional ? 'pending' : (isDone ? 'done' : (i === ci ? 'current' : 'pending')));
     // The current step (medical, final decision, etc.) reads "In Progress" and,
     // when a real (non-estimate) date is on file, appends it: "In Progress · <date>".
     // The "In Progress ·" prefix keeps a dated Final Decision from reading to the
@@ -450,10 +679,17 @@ function appBlock(c, idx, active, ctx = {}) {
     // PR-only sub-steps: email-received milestones nested under their parent step.
     let subs = '';
     if (isPR) {
-      const subRow = (label, dd) => `<div class="substep"><span class="subdot"></span><span>${esc(label)}</span><span class="subdate">${esc(dd)}</span></div>`;
+      const subRow = (label, dd, est) => `<div class="substep"><span class="subdot${est ? ' est' : ''}"></span><span>${esc(label)}</span><span class="subdate${est ? ' est' : ''}">${esc(dd)}</span></div>`;
       if (s.key === 'decision') {
-        if (dates.pr_portal_tab1 && !isEstV(dates.pr_portal_tab1)) subs += subRow('PR Portal Tab 1 Email Received', dates.pr_portal_tab1);
-        if (dates.pr_portal_tab2 && !isEstV(dates.pr_portal_tab2)) subs += subRow('PR Portal Tab 2 Email Received', dates.pr_portal_tab2);
+        const tab1 = dates.pr_portal_tab1 && !isEstV(dates.pr_portal_tab1) ? dates.pr_portal_tab1 : '';
+        if (tab1) subs += subRow('PR Portal Tab 1 Email Received', tab1);
+        if (dates.pr_portal_tab2 && !isEstV(dates.pr_portal_tab2)) {
+          subs += subRow('PR Portal Tab 2 Email Received', dates.pr_portal_tab2);
+        } else if (tab1) {
+          // Tab 2 typically arrives about 2 weeks after Tab 1; show an estimate until it does.
+          const p = parseLoose(tab1);
+          if (p) { const e = new Date(p); e.setDate(e.getDate() + 14); subs += subRow('PR Portal Tab 2 Email', 'Est. ' + MONTHS[e.getMonth()] + ' ' + e.getDate() + ', ' + e.getFullYear(), true); }
+        }
       }
     }
     // Sort rank/time for the concurrent-checks cluster (below): done steps first in
@@ -461,102 +697,190 @@ function appBlock(c, idx, active, ctx = {}) {
     // estimate. So a check that finished earlier never sits under one that has not.
     const rank = isDone ? 0 : (isCurrent ? 1 : 2);
     let sortTime;
-    if (isDone) { const p = parseLoose(dv); sortTime = p ? p.getTime() : i; }
+    if (isDone) { const p = parseLoose(dv) || (preArrivalBlankDone ? (parseLoose(dates.bio) || parseLoose(dates.aor)) : null); sortTime = p ? p.getTime() : i; }
     else if (isCurrent) { sortTime = Date.now(); }
     else { const p = parseLoose(estStr); sortTime = p ? p.getTime() : Number.MAX_SAFE_INTEGER; }
-    return { s, i, cls, isDone, when, subs, rank, sortTime };
+    return { s, i, cls, isDone, isCurrent, when, subs, rank, sortTime, dv, estStr };
   });
-  // Reorder the parallel checks (biometrics, pre-arrival, medical, background /
-  // in-process) by what actually happened, since IRCC runs them concurrently. Only
-  // the one contiguous cluster of these keys is reordered; every other step keeps
-  // its fixed position, and the progress bar and percentage are unchanged.
+  // Order the completed steps by date, not by the fixed track order. Milestones
+  // do not always happen in the template sequence: a representation-start date,
+  // for example, can fall after biometrics or the pre-arrival letter. So reorder
+  // the DONE steps chronologically by their real date, keeping each dateless-done
+  // step pinned just after the step it originally followed (carry-forward), and
+  // leaving the current and still-upcoming steps where they are. The progress bar
+  // and percentage are unchanged (they key off the stage, not this display order).
   {
-    const CLUSTER = new Set(['bio', 'prearrival', 'medical', 'bg', 'process']);
-    let start = -1, end = -1;
-    for (let k = 0; k < descs.length; k++) {
-      if (CLUSTER.has(descs[k].s.key)) { if (start < 0) start = k; end = k; }
-      else if (start >= 0) break;
+    let lastEff = 0;
+    for (const d of descs) {
+      if (d.isDone) {
+        const p = (d.dv && !isEstV(d.dv)) ? parseLoose(d.dv) : null;
+        d._eff = p ? p.getTime() : (lastEff + 1); // dateless-done inherits its predecessor's slot
+        lastEff = d._eff;
+      }
     }
-    if (start >= 0 && end > start) {
-      const block = descs.slice(start, end + 1)
-        .sort((a, b) => (a.rank - b.rank) || (a.sortTime - b.sortTime));
-      descs = descs.slice(0, start).concat(block, descs.slice(end + 1));
-    }
+    const doneIdx = [];
+    for (let k = 0; k < descs.length; k++) if (descs[k].isDone) doneIdx.push(k);
+    const sortedDone = doneIdx.map(k => descs[k]).slice().sort((a, b) => a._eff - b._eff);
+    const out = descs.slice();
+    let di = 0;
+    for (const k of doneIdx) out[k] = sortedDone[di++];
+    descs = out;
   }
   const steps = descs.map((d, pos) => {
-    const inner = d.isDone ? '&#10003;' : (pos + 1);
-    return `<div class="step ${d.cls}"><div class="node">${inner}</div><div><div class="t">${esc(d.s.t)}</div><div class="d">${esc(d.s.d)}</div>${d.when}${d.subs}</div></div>`;
+    const inner = d.isDone ? useIcon('i-check') : (pos + 1);
+    let when = '';
+    if (d.cls === 'current') {
+      when = (d.dv && !isEstV(d.dv)) ? `<span class="when cur">In Progress &middot; ${esc(d.dv)}</span>` : '<span class="when cur">In Progress</span>';
+    } else if (d.dv && !isEstV(d.dv)) {
+      when = `<span class="when">${esc(d.dv)}</span>`;
+    } else if (d.estStr) {
+      when = `<span class="when est">${esc(d.estStr)}</span>`;
+    }
+    return `<div class="step ${d.cls}"><div class="node">${inner}</div><div class="body"><div class="t">${esc(d.s.t)}</div><div class="d">${esc(d.s.d)}</div>${when}${d.subs}</div></div>`;
   }).join('');
-  const hasEst = !onHold && ci < STG.length - 1;
-  const checks = checklist.map(k => `<li class="${k.done ? '' : 'pend'}"><span class="tick ${k.done ? 'ok' : 'wait'}">${k.done ? '&#10003;' : '&#8226;'}</span>${esc(k.label)}</li>`).join('');
   const ircc = reconcileIrcc(safeJSON(c.ircc, null), STG, ci, dates);
-  const irccHtml = ircc ? `
-    <div class="istat">${(ircc.rows || []).map(r => `<div class="irow"><span class="il">${esc(r[0])}</span><span class="iv ${r[2] || ''}">${esc(r[1])}</span></div>`).join('')}</div>
-    ${(ircc.messages && ircc.messages.length) ? `<div class="imsg-h">Latest Updates From IRCC</div><div class="imsgs">${ircc.messages.map(m => `<div class="imsg"><span class="imd">${esc(m.date)}</span><span class="imt">${esc(m.text)}</span></div>`).join('')}</div>` : ''}`
-    : `<div class="istat"><div class="irow"><span class="il">No IRCC status yet. This appears once the e-APR is submitted to IRCC.</span></div></div>`;
+  // ----- derived view data for the monochrome layout -----
+  const appType = appTypeLabel(c);
+  const isApproved = atTerminal; // reached COPR / permit issued
+  const curStatus = onHold ? 'Final Decision Received' : STG[ci].t;
+  const first = firstNameOf(c.full_name);
+  const hasFamily = (dates.family === true || String(dates.family || '').toLowerCase() === 'true' || String(dates.family || '').toLowerCase() === 'yes');
+  const reassure = recFor(track, onHold ? 'hold' : STG[ci].key);
+  // what happens next: the next stage after the current, with its estimate
+  let nextStep = '', nextMeta = '', nextIcon = 'i-mail', nextFlag = 'No action needed from you';
+  if (onHold) { nextStep = 'Final Decision Received'; nextMeta = 'Please contact our office so we can review the decision with you.'; nextIcon = 'i-message'; nextFlag = 'Please contact our office'; }
+  else if (!isApproved) {
+    const ni = Math.min(ci + 1, STG.length - 1);
+    nextStep = STG[ni].t;
+    const est = estAt[ni];
+    nextMeta = est ? ('Expected around ' + String(est).replace(/^Est\.\s*/i, '') + '.') : 'We will update you as soon as there is movement.';
+    nextIcon = (STG[ni].key === 'copr' || STG[ni].key === 'issued') ? 'i-home' : 'i-mail';
+    if (STG[ci].key === 'intake') nextFlag = 'Please send your documents';
+  }
+  // ----- monochrome IRCC panel -----
+  const badge = x => x === 'done' ? 'done' : (x === 'prog' ? 'prog' : 'wait');
+  const irccRows = ircc ? (ircc.rows || []).map(r => `<div class="irow"><span class="il">${esc(r[0])}</span><span class="badge ${badge(r[2])}">${r[2] === 'done' ? useIcon('i-check') : ''}${esc(r[1])}</span></div>`).join('') : '';
+  const irccMsgs = (ircc && ircc.messages && ircc.messages.length) ? `<div class="msg-h">Latest Updates From IRCC</div>${ircc.messages.map(m => `<div class="msg"><span class="md">${esc(m.date)}</span><span>${esc(m.text)}</span></div>`).join('')}` : '';
+  const irccBody = ircc ? (irccRows + irccMsgs) : `<div class="irow"><span class="il">No IRCC status yet. This appears once the e-APR is submitted to IRCC.</span></div>`;
+  // ----- chips, ring, cards -----
+  const chips = [];
+  if (c.reference) chips.push(`<span class="chip">${useIcon('i-doc')} ${esc(maskRef(c.reference))}</span>`);
+  if (wpExpiry) chips.push(`<span class="chip">Current Work Permit Expires &middot; ${esc(wpExpiry)}</span>`);
+  const circ = (2 * Math.PI * 50).toFixed(1);
+  const dashoff = (2 * Math.PI * 50 * (1 - pct / 100)).toFixed(1);
+  const sync = esc(fmtSync(c.updated_at)).toUpperCase().replace(/-/g, ' ');
+  const celebrate = isApproved ? `<div class="card" style="overflow:hidden"><div class="celebrate">
+      <div class="emblem">${useIcon('i-spark')}</div>
+      <h2>Congratulations, ${esc(first)}${hasFamily ? ' and family' : ''}!</h2>
+      <p>Your permanent residence has been approved. Welcome to your new home country! Thank you for trusting us with your journey.</p></div></div>` : '';
+  const nextCard = (!isApproved && nextStep) ? `<div class="card"><div class="next">
+      <div class="ic">${useIcon(nextIcon)}</div>
+      <div class="ntxt"><div class="nlabel">What happens next</div><div class="nstep">${esc(nextStep)}</div>
+        <div class="nmeta">${esc(nextMeta)}</div>
+        <span class="pillflag">${useIcon('i-check')} ${esc(nextFlag)}</span></div></div></div>` : '';
+  const reassureCard = (!isApproved && reassure) ? `<div class="reassure"><div class="ic">${useIcon('i-eye')}</div>
+      <div class="rt"><b>We are watching your file</b><span>${esc(reassure)}</span></div></div>` : '';
   return `<div class="appblock" data-app="${idx}"${active ? '' : ' style="display:none"'}>
-  <div class="card">
-    <div class="hero">
-      <div><h2>${esc(appTypeLabel(c))}</h2>
-        ${c.reference ? `<div class="ref">${esc(maskRef(c.reference))}</div>` : ''}
-        ${wpExpiry ? `<div class="wpexp">Current Work Permit Expires · ${esc(wpExpiry)}</div>` : ''}</div>
-      <div class="statusnow"><div class="mlabel">Current Status</div><div class="val">${esc(onHold ? 'Final Decision Received' : STG[ci].t)}</div>
-        <div class="noc" style="margin-top:6px">Sync Date: ${esc(fmtSync(c.updated_at))}</div></div>
+  ${celebrate}
+  <div class="card hero">
+    <div class="hero-top">
+      <div class="hero-info"><div class="apptype">${esc(appType)}</div><h2>${esc(c.full_name)}</h2>
+        <div class="chips">${chips.join('')}</div></div>
+      <div class="ring"><svg class="r" width="116" height="116" viewBox="0 0 116 116">
+        <circle cx="58" cy="58" r="50" fill="none" stroke="#ededed" stroke-width="9"/>
+        <circle cx="58" cy="58" r="50" fill="none" stroke="#141414" stroke-width="9" stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${dashoff}"/>
+      </svg><div class="pct"><b>${pct}%</b><span>Step ${ci + 1} of ${STG.length}</span></div></div>
     </div>
-    <div class="seg">${seg}</div>
-    <div class="segcap">Step ${ci + 1} Of ${STG.length} · ${pct}% Complete</div>
-    <div class="steps">${steps}</div>
-    ${hasEst ? '<div class="estnote">Dates shown in yellow are estimated from average processing times. They are projections to help you plan, not commitments, and actual IRCC timelines vary.</div>' : ''}
+    <div class="banner ${isApproved ? 'done' : ''}"><span class="dot"></span>
+      <div class="btxt"><div class="blabel">Current Status</div><div class="bval">${esc(curStatus)}</div></div>
+      <div class="bsync">SYNCED ${sync}</div></div>
   </div>
-  <div class="card" style="margin-top:14px"><div class="panel-h" style="display:flex;justify-content:space-between;align-items:center"><span>IRCC Application Status</span><span style="font-weight:500;color:var(--faint);font-size:11px;font-family:var(--mono)">SYNCED ${esc(fmtSync(c.updated_at))}</span></div>${irccHtml}</div>
-  <div class="card" style="margin-top:14px"><div class="panel-h">Recommended Action</div><div class="rec">${esc(recFor(track, onHold ? 'hold' : STG[ci].key))}</div></div>
+  ${nextCard}
+  <div class="card"><div class="sec-h"><span class="t">Your Application Journey</span><span class="meta">${isApproved ? STG.length : Math.max(ci, 0)} of ${STG.length} complete</span></div>
+    <div class="steps">${steps}</div></div>
+  <div class="card"><div class="sec-h"><span class="t">IRCC Application Status</span><span class="meta">SYNCED ${sync}</span></div>${irccBody}</div>
+  ${reassureCard}
   </div>`;
 }
 
 function renderTracker(input, opts = {}) {
   const list = Array.isArray(input) ? input.slice() : [input];
-  if (!list.length) return page('Application Tracker', '<div class="card gate"><p>No application on file.</p></div>');
+  if (!list.length) return monoPage('Application Tracker', '<div class="card"><div class="irow"><span class="il">No application on file.</span></div></div>');
   const person = list[0];
-  const clientbar = opts.preview
-    ? `<div class="clientbar" style="background:var(--green-soft);border:1px solid #d7e6d0;border-radius:12px;padding:10px 14px">
-        <span class="who">Admin preview. This is exactly what <b>${esc(person.full_name)}</b> sees on their tracker.</span>
-        <a class="signout" href="/admin">Back to Admin</a>
-      </div>`
-    : `<div class="clientbar">
-        <span class="who">Signed in · <b>${esc(person.full_name)}</b></span>
-        <form method="POST" action="/logout" style="margin:0"><button class="signout">Sign out</button></form>
-      </div>`;
+  const first = firstNameOf(person.full_name);
   const multi = list.length > 1;
+
+  // Brand header: real logo, kicker, CICC Regulated seal.
+  const brand = `<div class="brand">
+    <img class="logo" src="/logo.png" alt="Olfindo Immigration Consulting Corporation (Olcorp.ca)">
+    <div class="kicker">Client Application Tracker</div>
+  </div>`;
+
+  // Thin admin-preview / signed-in bar (mono, inline-styled; MONO_CSS has no .clientbar).
+  const barCss = 'display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 2px 14px;padding:10px 14px;border:1px solid var(--line);border-radius:12px;background:var(--chip);font-size:13px;color:var(--muted)';
+  const linkCss = 'color:var(--ink);font-weight:600;text-decoration:none';
+  const clientbar = opts.preview
+    ? `<div style="${barCss}"><span>Admin preview &middot; exactly what <b style="color:var(--ink)">${esc(person.full_name)}</b> sees.</span><a style="${linkCss}" href="/admin">Back to Admin</a></div>`
+    : `<div style="${barCss}"><span>Signed in &middot; <b style="color:var(--ink)">${esc(person.full_name)}</b></span><form method="POST" action="/logout" style="margin:0"><button style="${linkCss};background:none;border:0;cursor:pointer;font-family:inherit;font-size:13px">Sign out</button></form></div>`;
+
+  // Greeting (per person). Subtitle adapts to the application type / count.
+  let sub;
+  if (multi) sub = 'Here is exactly where your applications stand today.';
+  else {
+    const t = appTypeLabel(person);
+    sub = (t === 'Permanent Residence')
+      ? 'Here is exactly where your permanent residence application stands today.'
+      : `Here is exactly where your ${t.toLowerCase()} application stands today.`;
+  }
+  const greet = `<div class="greet"><h1>Hi ${esc(first)},</h1><p>${esc(sub)}</p></div>`;
+
+  // App-type tabs (multi only), inline-styled mono pills.
+  const tabWrap = 'display:flex;gap:8px;flex-wrap:wrap;margin:0 2px 16px';
   const tabs = multi
-    ? `<div class="apptabs">${list.map((c, i) => `<button class="apptab ${i === 0 ? 'on' : ''}" data-target="${i}">${esc(appTypeLabel(c))}</button>`).join('')}</div>`
+    ? `<div style="${tabWrap}">${list.map((c, i) => `<button class="apptab" data-target="${i}" style="font-family:inherit;font-size:13px;font-weight:500;padding:8px 16px;border-radius:999px;cursor:pointer;border:1px solid ${i === 0 ? 'var(--ink)' : 'var(--line)'};background:${i === 0 ? 'var(--ink)' : '#fff'};color:${i === 0 ? '#fff' : 'var(--muted)'}">${esc(appTypeLabel(c))}</button>`).join('')}</div>`
     : '';
-  const intro = multi
-    ? `<p class="sub" style="margin:0 2px 12px">You have ${list.length} applications in progress. Select one to view its status.</p>`
-    : '';
+
   const hasExtApp = list.some(x => appTypeLabel(x) !== 'Permanent Residence');
   const blocks = list.map((c, i) => appBlock(c, i, i === 0, { hasExtApp })).join('');
-  const consultant = `<div class="card" style="margin-top:14px"><div class="panel-h">Your Consultant</div>
-      <div class="contact"><b>Jayvee Olfindo</b>, RCIC (R711813)<br>Olfindo Immigration Consulting Corporation<br>consulting@olcorp.ca<br><br>Questions about your file? Message us through the Direct Chat with Consultant button below, or reply to your last email, and we'll get back to you.</div></div>`;
-  // Bottom action buttons. Shared Folder link is per client (stored in stage_dates.folder_url);
-  // its button only shows when a link is set on the file.
+
+  // Bottom action links. Shared Folder is a per-file link stored in
+  // stage_dates.folder_url (the client's Google Drive folder); its button shows
+  // only when a link is set on the file. Connect Directly always shows.
   let folderUrl = '';
-  for (const c of list) { const u = safeJSON(c.stage_dates, {}).folder_url; if (u) { folderUrl = u; break; } }
-  const actions = `<div class="actionbtns">
-      <a class="actionbtn" href="${esc(CONSULT_CHAT_URL)}">Direct Chat with Consultant</a>
-      ${folderUrl ? `<a class="actionbtn" href="${esc(folderUrl)}" target="_blank" rel="noopener">Link to Shared Folder</a>` : ''}
-    </div>`;
+  for (const c of list) {
+    const d = safeJSON(c.stage_dates, {});
+    if (!folderUrl && d.folder_url) { folderUrl = d.folder_url; break; }
+  }
+
+  // Consultant card.
+  const consultant = `<div class="card" style="margin-top:14px">
+    <div class="consult">
+      <div class="avatar">JO</div>
+      <div>
+        <div class="cn">Jayvee Olfindo, RCIC</div>
+        <div class="cr">CICC License # R711813 &middot; SINP License # 000996</div>
+        <div class="cm">Olfindo Immigration Consulting Corporation (Olcorp.ca)</div>
+      </div>
+    </div>
+    <div class="actions">
+      <a class="btn primary" href="${esc(CONSULT_CHAT_URL)}" target="_blank" rel="noopener">${useIcon('i-message')} Chat Directly</a>
+      ${folderUrl ? `<a class="btn ghost" href="${esc(folderUrl)}" target="_blank" rel="noopener">${useIcon('i-folder')} Shared Folder</a>` : ''}
+    </div>
+  </div>`;
+
+  const foot = `<div class="foot">
+    <span class="seal">OLFINDO IMMIGRATION CONSULTING CORPORATION</span><br>
+    Regulated Canadian Immigration Consultant &middot; CICC License # R711813 &middot; SINP License # 000996<br>
+    Regina &amp; Saskatoon, Saskatchewan &middot; consulting@olcorp.ca<br>
+    <span class="lock">${useIcon('i-lock')} This page shows only your own file and is verified securely.</span>
+  </div>`;
+
   const script = multi
-    ? `<script>(function(){var tabs=document.querySelectorAll('.apptab'),blocks=document.querySelectorAll('.appblock');tabs.forEach(function(t){t.addEventListener('click',function(){var tgt=t.getAttribute('data-target');tabs.forEach(function(x){x.classList.toggle('on',x===t);});blocks.forEach(function(b){b.style.display=(b.getAttribute('data-app')===tgt)?'':'none';});});});})();</script>`
+    ? `<script>(function(){var tabs=document.querySelectorAll('.apptab'),blocks=document.querySelectorAll('.appblock');tabs.forEach(function(t){t.addEventListener('click',function(){var tgt=t.getAttribute('data-target');tabs.forEach(function(x){var on=x===t;x.style.borderColor=on?'var(--ink)':'var(--line)';x.style.background=on?'var(--ink)':'#fff';x.style.color=on?'#fff':'var(--muted)';});blocks.forEach(function(b){b.style.display=(b.getAttribute('data-app')===tgt)?'':'none';});});});})();</script>`
     : '';
-  const body = `
-  ${clientbar}
-  ${intro}
-  ${tabs}
-  ${blocks}
-  ${consultant}
-  ${actions}
-  ${script}`;
-  return page(`${person.full_name} · Application Tracker`, body);
+
+  const body = `${brand}${clientbar}${greet}${tabs}${blocks}${consultant}${foot}${script}`;
+  return monoPage(`${person.full_name} · Application Tracker`, body);
 }
 
 // ---- consultant admin ----
