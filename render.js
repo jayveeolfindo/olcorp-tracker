@@ -702,29 +702,26 @@ function appBlock(c, idx, active, ctx = {}) {
     else { const p = parseLoose(estStr); sortTime = p ? p.getTime() : Number.MAX_SAFE_INTEGER; }
     return { s, i, cls, isDone, isCurrent, when, subs, rank, sortTime, dv, estStr };
   });
-  // Order the completed steps by date, not by the fixed track order. Milestones
-  // do not always happen in the template sequence: a representation-start date,
-  // for example, can fall after biometrics or the pre-arrival letter. So reorder
-  // the DONE steps chronologically by their real date, keeping each dateless-done
-  // step pinned just after the step it originally followed (carry-forward), and
-  // leaving the current and still-upcoming steps where they are. The progress bar
-  // and percentage are unchanged (they key off the stage, not this display order).
+  // Order the whole timeline by date, not by the fixed track order. Milestones do
+  // not always happen in the template sequence: a representation-start date can
+  // fall after biometrics, and a step that is in progress with a real start date
+  // (for example Background, which begins right after biometrics) should sit ahead
+  // of still-undated steps like the Pre-Arrival letter or Medical. Each step's
+  // effective date is its real date when it has one (completed, or in progress),
+  // otherwise its forward estimate, otherwise it carries forward from the step it
+  // follows so a dateless step stays beside it. The sort is stable, so equal dates
+  // keep their original order. The progress bar and percentage are unchanged (they
+  // key off the stage, not this display order).
   {
     let lastEff = 0;
-    for (const d of descs) {
-      if (d.isDone) {
-        const p = (d.dv && !isEstV(d.dv)) ? parseLoose(d.dv) : null;
-        d._eff = p ? p.getTime() : (lastEff + 1); // dateless-done inherits its predecessor's slot
-        lastEff = d._eff;
-      }
+    for (let k = 0; k < descs.length; k++) {
+      const d = descs[k];
+      const real = (d.dv && !isEstV(d.dv)) ? parseLoose(d.dv) : null;
+      const est = (!real && d.estStr) ? parseLoose(d.estStr) : null;
+      d._eff = real ? real.getTime() : (est ? est.getTime() : (lastEff + 1));
+      lastEff = d._eff;
     }
-    const doneIdx = [];
-    for (let k = 0; k < descs.length; k++) if (descs[k].isDone) doneIdx.push(k);
-    const sortedDone = doneIdx.map(k => descs[k]).slice().sort((a, b) => a._eff - b._eff);
-    const out = descs.slice();
-    let di = 0;
-    for (const k of doneIdx) out[k] = sortedDone[di++];
-    descs = out;
+    descs = descs.map((d, i) => [d, i]).sort((a, b) => (a[0]._eff - b[0]._eff) || (a[1] - b[1])).map(x => x[0]);
   }
   const steps = descs.map((d, pos) => {
     const inner = d.isDone ? useIcon('i-check') : (pos + 1);
