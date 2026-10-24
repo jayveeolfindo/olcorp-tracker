@@ -119,7 +119,6 @@ const SIG_TEXT =
   `My appointments expire on December 31, 2026\n` +
   `Verify my Status with the Council:\n` +
   `https://www.college-ic.ca/protecting-the-public/find-an-immigration-consultant\n` +
-  `Confidential Email: jayveeolfindo@olcorp.ca\n` +
   `Office Phone: 639-554-9791\n` +
   `Office Email: consulting@olcorp.ca\n` +
   `Website: www.olcorp.ca\n` +
@@ -138,7 +137,6 @@ const SIG_HTML = `
       <div style="font-style:italic;text-decoration:underline">My appointments expire on December 31, 2026</div>
       <div style="margin-top:4px">Verify my Status with the Council:</div>
       <div><a href="https://www.college-ic.ca/protecting-the-public/find-an-immigration-consultant" style="color:#1155cc">https://www.college-ic.ca/protecting-the-public/find-an-immigration-consultant</a></div>
-      <div><strong>Confidential Email:</strong> <a href="mailto:jayveeolfindo@olcorp.ca" style="color:#1155cc">jayveeolfindo@olcorp.ca</a></div>
       <div>Office Phone: 639-554-9791</div>
       <div>Office Email: <a href="mailto:consulting@olcorp.ca" style="color:#1155cc">consulting@olcorp.ca</a></div>
       <div>Website: <a href="https://www.olcorp.ca" style="color:#1155cc">www.olcorp.ca</a></div>
