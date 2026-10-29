@@ -765,6 +765,11 @@ function appBlock(c, idx, active, ctx = {}) {
     nextMeta = est ? ('Expected around ' + String(est).replace(/^Est\.\s*/i, '') + '.') : 'We will update you as soon as there is movement.';
     nextIcon = (nd.s.key === 'copr' || nd.s.key === 'issued') ? 'i-home' : 'i-mail';
     if (STG[ci].key === 'intake') nextFlag = 'Please send your documents';
+    const isPrTrack = (track === 'sinp' || track === 'express' || track === 'spousal-outland' || track === 'spousal-inland');
+    if (nd.s.key === 'bio' && isPrTrack) {
+      nextFlag = 'Action needed: send your availability';
+      nextMeta = (est ? ('Expected around ' + String(est).replace(/^Est\.\s*/i, '') + '. ') : '') + 'Please send us a few dates and times that work for you so we can book your biometrics appointment.';
+    }
   }
   // ----- monochrome IRCC panel -----
   const badge = x => x === 'done' ? 'done' : (x === 'prog' ? 'prog' : 'wait');

@@ -6,6 +6,8 @@
 //   - Permanent residence, no nomination ...... 'express'   (federal-only PR steps)
 //   - Temporary residence (WP/SP/VR), SINP .... 'temp-sinp' (SINP support + permit steps)
 //   - Temporary residence, no SINP ............ 'temp'      (permit steps only)
+//   - Spousal sponsorship, outland ............ 'spousal-outland' (family class PR, processed abroad)
+//   - Spousal sponsorship, inland ............. 'spousal-inland'  (in-Canada class, with open work permit and AIP)
 
 const SINP_STAGES = [
   { key: 'intake',   t: 'Representation Started', d: 'We gather and verify your identity documents, employment records, and forms.' },
@@ -95,6 +97,33 @@ const STAY_EXT_STAGES = [
   { key: 'issued',   t: 'Visitor Record Issued',        d: 'Your new visitor record is issued.' }
 ];
 
+// Spousal sponsorship, outland (Family Class, processed at a visa office abroad).
+const SPOUSAL_OUTLAND_STAGES = [
+  { key: 'intake',    t: 'Representation Started', d: 'We gather and verify your relationship proof, identity documents, and forms for both the sponsor and the applicant.' },
+  { key: 'submitted', t: 'Application Submitted to IRCC', d: 'Your sponsorship and permanent residence application is filed with IRCC.' },
+  { key: 'aor',       t: 'Acknowledgement of Receipt (AOR)', d: 'IRCC acknowledges receipt and links your file. This appears once the AOR is issued.' },
+  { key: 'bio',       t: 'Biometrics', d: 'Fingerprints and photo captured at a collection point.' },
+  { key: 'sponsor',   t: 'Sponsor Eligibility Approved', d: 'IRCC confirms the sponsor meets the requirements to sponsor.' },
+  { key: 'medical',   t: 'Medical Exam', d: 'Review of your medical history.' },
+  { key: 'bg',        t: 'Background & Security Check', d: 'IRCC reviews background and admissibility to Canada. This stage is routine and can take some time.' },
+  { key: 'decision',  t: 'Final Decision', d: 'IRCC issues the decision on your application.' },
+  { key: 'copr',      t: 'PR Confirmed (COPR)', d: 'Confirmation of Permanent Residence issued.' }
+];
+
+// Spousal sponsorship, inland (Spouse or Common-Law Partner in Canada class).
+const SPOUSAL_INLAND_STAGES = [
+  { key: 'intake',    t: 'Representation Started', d: 'We gather and verify your relationship proof, identity documents, and forms for both the sponsor and the applicant.' },
+  { key: 'submitted', t: 'Application Submitted to IRCC', d: 'Your sponsorship and permanent residence application is filed with IRCC.' },
+  { key: 'aor',       t: 'Acknowledgement of Receipt (AOR)', d: 'IRCC acknowledges receipt and links your file. This appears once the AOR is issued.' },
+  { key: 'sowp',      t: 'Open Work Permit', d: 'If you applied for one, IRCC issues an open work permit so you can work in Canada while your sponsorship is processed.' },
+  { key: 'bio',       t: 'Biometrics', d: 'Fingerprints and photo captured at a collection point.' },
+  { key: 'aip',       t: 'Approval in Principle (Stage 1)', d: 'IRCC confirms your relationship and the sponsor eligibility. You may continue living in Canada while the final review is completed.' },
+  { key: 'medical',   t: 'Medical Exam', d: 'Review of your medical history.' },
+  { key: 'bg',        t: 'Background & Security Check', d: 'IRCC reviews background and admissibility to Canada. This stage is routine and can take some time.' },
+  { key: 'decision',  t: 'Final Decision', d: 'IRCC issues the decision on your application.' },
+  { key: 'copr',      t: 'PR Confirmed (COPR)', d: 'Confirmation of Permanent Residence issued.' }
+];
+
 const TRACKS = {
   'sinp': SINP_STAGES,
   'express': EXPRESS_STAGES,
@@ -105,7 +134,9 @@ const TRACKS = {
   'study-outside': STUDY_STAGES,
   'visitor-visa': VISITOR_VISA_STAGES,
   'super-visa': SUPER_VISA_STAGES,
-  'stay-extension': STAY_EXT_STAGES
+  'stay-extension': STAY_EXT_STAGES,
+  'spousal-outland': SPOUSAL_OUTLAND_STAGES,
+  'spousal-inland': SPOUSAL_INLAND_STAGES
 };
 
 // Union of every step across all tracks, deduped by key, in a sensible order.
@@ -118,7 +149,10 @@ const ALL_STAGES = [
   { key: 'aor',      t: 'Acknowledgement of Receipt (AOR)' },
   { key: 'support',  t: 'SINP Work Permit Support Letter' },
   { key: 'submitted',t: 'Application Submitted to IRCC' },
+  { key: 'sowp',     t: 'Open Work Permit' },
   { key: 'bio',      t: 'Biometrics' },
+  { key: 'sponsor',  t: 'Sponsor Eligibility Approved' },
+  { key: 'aip',      t: 'Approval in Principle (Stage 1)' },
   { key: 'prearrival', t: 'Invitation to Pre-Arrival Services Letter' },
   { key: 'medical',  t: 'Medical Exam' },
   { key: 'process',  t: 'Application in Process' },
@@ -145,6 +179,10 @@ function trackFor(stream) {
   if (/study permit/i.test(s) && !/extension/i.test(s)) return isOutside ? 'study-outside' : 'study-permit';
   const isTemp = /work permit|study permit|visitor|temporary|permit extension|\bWP\b|\bSP\b|\bVR\b/i.test(s);
   if (isTemp) return isSinp ? 'temp-sinp' : (isOutside ? 'temp-outside' : 'temp');
+  // Spousal / common-law sponsorship (family class PR). Jayvee always marks the
+  // stream inland or outland; outland is the fallback if neither word appears.
+  const isSpousal = /spousal|spouse|common[-\s]?law|conjugal/i.test(s);
+  if (isSpousal) return /inland|in[-\s]?canada|\bSCLPC\b/i.test(s) ? 'spousal-inland' : 'spousal-outland';
   return isSinp ? 'sinp' : 'express';
 }
 
@@ -246,6 +284,31 @@ const RECS = {
     process:   "Your study permit application is being reviewed by IRCC, and there is nothing further needed from you at this stage. Please keep your passport valid and your contact details current, and if IRCC requests your passport or any document we will guide you. Thank you for your patience while we monitor it for you.",
     decision:  "You are almost at the finish line. IRCC is finalizing the decision on your study permit. Please keep your passport valid and ready, since it may be requested so your document or entry visa can be issued, and we will reach out the moment we hear.",
     issued:    "Congratulations, your study permit has been approved. IRCC will issue your Port of Entry Letter of Introduction, and your entry visa if one is required. Please send us a copy and follow the arrival and next steps we will send you. We are excited for you."
+  },
+  // Spousal sponsorship, outland (family class PR, processed at a visa office abroad).
+  'spousal-outland': {
+    intake:    "Welcome, and thank you for trusting us with your spousal sponsorship. To get started, please send the documents on your Requirements Checklist, including your relationship proof, so we can finish preparing and filing your application. If anything is unclear, just reach out, we are always here to help.",
+    submitted: "Your spousal sponsorship and permanent residence application is now safely filed with IRCC. This is the longest part of the journey, so please settle in and let us do the watching. There is nothing you need to do right now. Just keep us posted if your address, contact details, or family situation changes.",
+    aor:       "Good news, IRCC has confirmed they have your application. There is nothing you need to do at the moment. The next thing to watch for is a biometrics request, so please tell us as soon as one arrives and we will guide you from there.",
+    bio:       "Most applicants receive a biometrics letter by email asking for fingerprints and a photo. If you get one, please book and complete your appointment as soon as you can, then let us know. We are glad to walk you through where to go and what to bring.",
+    sponsor:   "Good progress, IRCC has confirmed that your sponsor meets the requirements to sponsor. There is nothing you need to do at this moment. Your application now continues through the remaining review steps, and we are keeping a close eye on it for you.",
+    medical:   "If IRCC emails you to request your medical, please complete it with an approved panel physician if you have not already. If you have not been asked, there is nothing to do for now. We are happy to help you find the nearest panel doctor.",
+    bg:        "Your background and security check is now underway. This is a normal and quiet part of the process, so please be patient. There is nothing you need to do while it runs, and we are keeping an eye on it for you.",
+    decision:  "You are almost there. IRCC is finalizing your decision. Please keep your passport valid and your contact details current so nothing is delayed. We will coordinate your landing and your PR card with you, and guide you through every step.",
+    copr:      "Congratulations, this is the moment we have all been working toward. Please follow the landing instructions we will send you to complete your permanent residence and apply for your PR card. We could not be happier for you and your family."
+  },
+  // Spousal sponsorship, inland (Spouse or Common-Law Partner in Canada class).
+  'spousal-inland': {
+    intake:    "Welcome, and thank you for trusting us with your spousal sponsorship. To get started, please send the documents on your Requirements Checklist, including your relationship proof, so we can finish preparing and filing your application. If anything is unclear, just reach out, we are always here to help.",
+    submitted: "Your spousal sponsorship and permanent residence application is now safely filed with IRCC. If you applied for an open work permit, we will watch for it alongside your sponsorship. There is nothing you need to do right now. Please keep us posted if your address, contact details, or family situation changes.",
+    aor:       "Good news, IRCC has confirmed they have your application. There is nothing you need to do at the moment. The next things to watch for are your open work permit, if you applied, and a biometrics request, so please tell us as soon as either arrives.",
+    sowp:      "Wonderful, your open work permit has been issued, so you can work in Canada while your sponsorship is processed. Please review it to make sure every detail is correct, then send us a copy so we can update your file.",
+    bio:       "Most applicants receive a biometrics letter by email asking for fingerprints and a photo. If you get one, please book and complete your appointment as soon as you can, then let us know. We are glad to walk you through where to go and what to bring.",
+    aip:       "This is a big milestone. Your application has reached Approval in Principle, which means IRCC has confirmed your relationship and your sponsor's eligibility. You may continue living in Canada while the final review is completed. There is nothing you need to do right now.",
+    medical:   "If IRCC emails you to request your medical, please complete it with an approved panel physician if you have not already. If you have not been asked, there is nothing to do for now. We are happy to help you find the nearest panel doctor.",
+    bg:        "Your background and security check is now underway. This is a normal and quiet part of the process, so please be patient. There is nothing you need to do while it runs, and we are keeping an eye on it for you.",
+    decision:  "You are almost there. IRCC is finalizing your decision. Please keep your contact details current so nothing is delayed. We will coordinate your landing and your PR card with you, and guide you through every step.",
+    copr:      "Congratulations, this is the moment we have all been working toward. Please follow the landing instructions we will send you to complete your permanent residence and apply for your PR card. We could not be happier for you and your family."
   }
 };
 
@@ -254,7 +317,7 @@ const FEES_NOTE = " To keep your filing on schedule, it also helps to set aside 
 // Appended to the post-filing waiting steps, where IRCC may occasionally email the client directly.
 const IRCC_FWD = " IRCC usually sends updates to us, but once in a while they email you directly. If you ever receive anything from IRCC, please forward it to us right away so we can guide you on it and keep your file properly tracked.";
 const FEES_KEYS = new Set(['intake', 'nom']);
-const FWD_KEYS = new Set(['eapr', 'aor', 'prearrival', 'bg', 'submitted', 'process']);
+const FWD_KEYS = new Set(['eapr', 'aor', 'prearrival', 'bg', 'submitted', 'process', 'sponsor', 'aip']);
 
 // Neutral holding message shown when a final decision has landed but we do not
 // want the client to read the outcome from the tracker before we have spoken with
@@ -281,6 +344,8 @@ module.exports.STUDY_STAGES = STUDY_STAGES;
 module.exports.VISITOR_VISA_STAGES = VISITOR_VISA_STAGES;
 module.exports.SUPER_VISA_STAGES = SUPER_VISA_STAGES;
 module.exports.STAY_EXT_STAGES = STAY_EXT_STAGES;
+module.exports.SPOUSAL_OUTLAND_STAGES = SPOUSAL_OUTLAND_STAGES;
+module.exports.SPOUSAL_INLAND_STAGES = SPOUSAL_INLAND_STAGES;
 module.exports.ALL_STAGES = ALL_STAGES;
 module.exports.TRACKS = TRACKS;
 module.exports.trackFor = trackFor;
