@@ -767,7 +767,7 @@ function appBlock(c, idx, active, ctx = {}) {
     if (STG[ci].key === 'intake') nextFlag = 'Please send your documents';
     const isPrTrack = (track === 'sinp' || track === 'express' || track === 'spousal-outland' || track === 'spousal-inland');
     if (nd.s.key === 'bio' && isPrTrack) {
-      nextFlag = 'Action needed: send your availability';
+      nextFlag = 'Action Needed: Please coordinate your availability to our office.';
       nextMeta = (est ? ('Expected around ' + String(est).replace(/^Est\.\s*/i, '') + '. ') : '') + 'Please send us a few dates and times that work for you so we can book your biometrics appointment.';
     }
   }
