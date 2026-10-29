@@ -770,6 +770,18 @@ function appBlock(c, idx, active, ctx = {}) {
       nextFlag = 'Action Needed: Please coordinate your availability to our office.';
       nextMeta = (est ? ('Expected around ' + String(est).replace(/^Est\.\s*/i, '') + '. ') : '') + 'Please send us a few dates and times that work for you so we can book your biometrics appointment.';
     }
+    // PR Portal Tab 1 email received: IRCC has opened the applicant's PR Portal so
+    // their information can be confirmed. The client coordinates with our office so
+    // we can review and confirm the details together before PR is confirmed. This
+    // stays the live action until the Tab 2 email arrives.
+    const tab1Set = isPrTrack && dates.pr_portal_tab1 && !isEstV(dates.pr_portal_tab1);
+    const tab2Set = dates.pr_portal_tab2 && !isEstV(dates.pr_portal_tab2);
+    if (tab1Set && !tab2Set) {
+      nextStep = 'PR Portal Access Issued (Tab 1)';
+      nextIcon = 'i-message';
+      nextFlag = 'Action Needed: Please coordinate with our office to confirm your information.';
+      nextMeta = 'IRCC has opened your PR Portal (Tab 1) so your information can be confirmed. Please coordinate with our office so we can review and confirm your details together.';
+    }
   }
   // ----- monochrome IRCC panel -----
   const badge = x => x === 'done' ? 'done' : (x === 'prog' ? 'prog' : 'wait');
