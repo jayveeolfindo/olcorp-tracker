@@ -122,6 +122,7 @@ code{font-family:var(--mono);font-size:11px;background:var(--slate-soft);padding
 .apptab.on{background:var(--dark);color:#fff;border-color:var(--dark)}
 /* ===== Admin theme — mirrors the client tracker: white background, floating white cards, mono labels, pill statuses; scoped so client pages stay untouched ===== */
 body.admin{background:#fff}
+body.admin .brandlogo{background:transparent;border:0;box-shadow:none;padding:8px 0}
 body.admin .wrap{max-width:1120px}
 body.admin h1{font-size:26px;font-weight:800;letter-spacing:-.7px;margin:2px 0 0}
 body.admin .sub{font-size:13px;color:var(--muted);line-height:1.55;margin:9px 0 0;max-width:640px}
