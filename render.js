@@ -195,6 +195,19 @@ body.admin .btn{border-radius:999px}
 body.admin .ltable th{background:var(--card2)}
 body.admin .ltable tr:hover td{background:var(--card2)}
 body.admin .linkcode{border-radius:11px}
+/* admin mobile: stack each row and lay actions out horizontally instead of a cramped column */
+@media(max-width:760px){
+  body.admin .wrap{padding:0 14px 50px}
+  body.admin h1{font-size:22px}
+  body.admin .ahero{padding:20px 18px}
+  body.admin .ahero-stat{border-left:0;border-top:1px solid var(--line2);width:100%;text-align:left;padding:14px 0 0;margin-top:6px}
+  body.admin .arow{grid-template-columns:1fr;gap:12px;padding:18px 16px}
+  body.admin .aname{font-size:15px}
+  body.admin .astatus{flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px 10px}
+  body.admin .actions{justify-content:flex-start;gap:8px;flex-wrap:wrap}
+  body.admin .wbtn{min-width:0}
+  body.admin .mpop{min-width:150px;max-width:calc(100vw - 48px)}
+}
 `;
 
 function page(title, body, opts = {}) {
