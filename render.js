@@ -128,7 +128,19 @@ body.admin h1{font-size:26px;font-weight:800;letter-spacing:-.7px;margin:2px 0 0
 body.admin .sub{font-size:13px;color:var(--muted);line-height:1.55;margin:9px 0 0;max-width:640px}
 body.admin a.back{display:inline-block;margin:4px 2px 16px;font-size:12.5px}
 body.admin a.back:hover{color:var(--ink)}
-body.admin .card{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);overflow:hidden}
+body.admin .card{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow)}
+body.admin .arowhead{border-radius:18px 18px 0 0}
+body.admin .card>.arow:last-child{border-radius:0 0 18px 18px}
+/* row actions "More" dropdown */
+body.admin .moremenu{position:relative}
+body.admin .moremenu>summary{list-style:none;cursor:pointer;display:inline-block}
+body.admin .moremenu>summary::-webkit-details-marker{display:none}
+body.admin .moremenu[open]>summary{background:var(--card2);border-color:var(--faint);color:var(--ink)}
+body.admin .mpop{position:absolute;right:0;top:calc(100% + 6px);z-index:30;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:6px;min-width:162px;display:flex;flex-direction:column;gap:2px}
+body.admin .mpop a,body.admin .mpop button{display:block;width:100%;text-align:left;background:none;border:0;border-radius:8px;padding:9px 12px;font-size:13px;font-weight:600;color:var(--ink);text-decoration:none;cursor:pointer;font-family:var(--sans);line-height:1.2}
+body.admin .mpop a:hover,body.admin .mpop button:hover{background:var(--card2)}
+body.admin .mpop form{margin:0}
+body.admin .mpop .danger{color:#b23c30}
 /* hero — echoes the client hero: mono label, title, and a stat on the right */
 .ahero{display:flex;justify-content:space-between;align-items:center;gap:22px;flex-wrap:wrap;padding:26px 28px;margin:6px 0 16px}
 .ahero-l{flex:1;min-width:260px}
@@ -999,10 +1011,14 @@ function renderAdmin(clients, archived = []) {
       <div class="actions">
         <a class="abtn ghost" href="/admin/clients/${esc(c.id)}/preview">View as client</a>
         <a class="abtn ghost" href="/admin/clients/${esc(c.id)}/edit">Edit</a>
-        <a class="abtn ghost" href="/admin/clients/${esc(c.id)}/status">Status</a>
-        <a class="abtn" href="/admin/clients/${esc(c.id)}/link">Issue link &#9656;</a>
         ${welcomeCell}
-        <form method="POST" action="/admin/clients/${esc(c.id)}/archive" style="margin:0"><button class="abtn ghost">Archive</button></form>
+        <details class="moremenu"><summary class="abtn ghost">More &#9662;</summary>
+          <div class="mpop">
+            <a href="/admin/clients/${esc(c.id)}/link">Issue link</a>
+            <a href="/admin/clients/${esc(c.id)}/status">Status</a>
+            <form method="POST" action="/admin/clients/${esc(c.id)}/archive"><button type="submit" class="danger">Archive</button></form>
+          </div>
+        </details>
       </div>
     </div>`;
   }).join('');
@@ -1051,7 +1067,8 @@ function renderAdmin(clients, archived = []) {
   ${filterBar}
   <div class="card">${colHead}${rows || '<div class="arow"><div class="ameta">No active clients yet. Click &ldquo;Add Client&rdquo; to create one.</div></div>'}</div>
   ${archived.length ? `<h1 style="font-size:16px;margin-top:26px">Archived Files</h1><div class="card">${archivedRows}</div>` : ''}
-  ${filterJs}`;
+  ${filterJs}
+  <script>document.addEventListener('click',function(e){document.querySelectorAll('details.moremenu[open]').forEach(function(d){if(!d.contains(e.target))d.removeAttribute('open');});});</script>`;
   return page('Admin · Client Application Tracker', body, { admin: true });
 }
 
