@@ -120,45 +120,65 @@ code{font-family:var(--mono);font-size:11px;background:var(--slate-soft);padding
 .apptabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 2px 14px}
 .apptab{background:#fff;border:1.5px solid var(--line);color:var(--muted);border-radius:999px;padding:8px 16px;font-size:12.5px;font-weight:700;cursor:pointer}
 .apptab.on{background:var(--dark);color:#fff;border-color:var(--dark)}
-/* ===== Admin refresh — same visual language as the client tracker; scoped so client pages stay untouched ===== */
+/* ===== Admin theme — mirrors the client tracker: white background, floating white cards, mono labels, pill statuses; scoped so client pages stay untouched ===== */
+body.admin{background:#fff}
 body.admin .wrap{max-width:1120px}
-body.admin h1{font-size:23px;font-weight:800;letter-spacing:-.6px;margin:2px 0 0}
-body.admin .sub{font-size:13px;color:var(--muted);line-height:1.55;margin:8px 0 0;max-width:640px}
-body.admin a.back{display:inline-block;margin:4px 2px 14px}
+body.admin h1{font-size:26px;font-weight:800;letter-spacing:-.7px;margin:2px 0 0}
+body.admin .sub{font-size:13px;color:var(--muted);line-height:1.55;margin:9px 0 0;max-width:640px}
+body.admin a.back{display:inline-block;margin:4px 2px 16px;font-size:12.5px}
 body.admin a.back:hover{color:var(--ink)}
-.ahero{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;flex-wrap:wrap;padding:22px 24px;margin:4px 0 16px}
-.ahero-l{flex:1;min-width:260px}.ahero .mlabel{margin-bottom:7px}
-.ahero-r{display:flex;gap:8px;flex-wrap:wrap;flex-shrink:0}
-body.admin .card{border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
-body.admin .abtn{border:1.5px solid var(--dark);border-radius:999px;padding:8px 15px;font-size:12.5px;font-weight:700;line-height:1;transition:opacity .15s ease,background .15s ease,border-color .15s ease,color .15s ease}
+body.admin .card{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);overflow:hidden}
+/* hero — echoes the client hero: mono label, title, and a stat on the right */
+.ahero{display:flex;justify-content:space-between;align-items:center;gap:22px;flex-wrap:wrap;padding:26px 28px;margin:6px 0 16px}
+.ahero-l{flex:1;min-width:260px}
+.ahero .mlabel{margin-bottom:9px}
+.ahero-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.ahero-stat{flex-shrink:0;text-align:center;min-width:118px;padding:6px 22px;border-left:1px solid var(--line2)}
+.ahero-stat .statnum{font-size:40px;font-weight:800;letter-spacing:-1.5px;line-height:1}
+.ahero-stat .statlbl{font-family:var(--mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--faint);margin-top:7px}
+@media(max-width:600px){.ahero-stat{border-left:0;border-top:1px solid var(--line2);width:100%;text-align:left;padding:14px 0 0;margin-top:4px}}
+/* buttons */
+body.admin .abtn{border:1.5px solid var(--dark);border-radius:999px;padding:9px 16px;font-size:12.5px;font-weight:700;line-height:1;transition:opacity .15s,background .15s,border-color .15s,color .15s}
 body.admin .abtn:hover{opacity:.92}
 body.admin .abtn.ghost{background:#fff;color:var(--muted);border-color:var(--line)}
 body.admin .abtn.ghost:hover{color:var(--ink);border-color:var(--faint);background:var(--card2);opacity:1}
-body.admin .filterbar{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:12px 14px}
-body.admin .filterbar input,body.admin .filterbar select{border-radius:10px}
-body.admin .arowhead{background:var(--card2);border-bottom:1px solid var(--line)}
-body.admin .arow{padding:16px 18px;border-top:1px solid var(--line2);transition:background .12s ease}
+/* filter toolbar */
+body.admin .filterbar{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:14px 16px}
+body.admin .filterbar input,body.admin .filterbar select{border-radius:11px}
+/* list */
+body.admin .arowhead{background:var(--card2);border-bottom:1px solid var(--line);padding:12px 22px}
+body.admin .arow{padding:20px 22px;border-top:1px solid var(--line2);transition:background .12s}
+body.admin .arow:first-of-type{border-top:0}
 body.admin .arow:hover{background:var(--card2)}
-body.admin .aname{font-size:14.5px;font-weight:700;letter-spacing:-.2px}
-body.admin .ameta{font-size:12px;color:var(--muted);margin-top:3px}
-body.admin .astatus{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
-body.admin .sstage{display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:.3px;font-weight:600;color:#41586e;background:var(--slate-soft);border:1px solid #dde3e8;border-radius:999px;padding:5px 11px;line-height:1.25}
-body.admin .slabel{font-size:12px;color:var(--muted);line-height:1.4}
-body.admin .arow[data-status*="Approved"] .sstage,body.admin .arow[data-status*="Confirmed"] .sstage,body.admin .arow[data-status*="Issued"] .sstage{color:#41762f;background:var(--green-soft);border-color:#d7e6d0}
+body.admin .aname{font-size:15.5px;font-weight:800;letter-spacing:-.3px}
+body.admin .ameta{font-size:12px;color:var(--muted);margin-top:4px}
+/* status pill — client-tracker style, with a state dot */
+body.admin .astatus{display:flex;flex-direction:column;gap:7px;align-items:flex-start}
+body.admin .sstage{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11px;letter-spacing:.4px;font-weight:600;text-transform:uppercase;color:var(--ink);background:#f1f3f0;border:1px solid var(--line);border-radius:999px;padding:6px 13px;line-height:1.2}
+body.admin .sstage::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--faint);flex:0 0 6px}
+body.admin .slabel{font-size:12.5px;color:var(--muted);line-height:1.4}
+body.admin .arow[data-status*="Process"] .sstage::before,body.admin .arow[data-status*="Review"] .sstage::before,body.admin .arow[data-status*="Final Decision"] .sstage::before,body.admin .arow[data-status*="Background"] .sstage::before{background:#3b73c4}
+body.admin .arow[data-status*="Approved"] .sstage,body.admin .arow[data-status*="Confirmed"] .sstage,body.admin .arow[data-status*="Issued"] .sstage{color:#2f6a28;background:var(--green-soft);border-color:#d7e6d0}
+body.admin .arow[data-status*="Approved"] .sstage::before,body.admin .arow[data-status*="Confirmed"] .sstage::before,body.admin .arow[data-status*="Issued"] .sstage::before{background:var(--green)}
 body.admin .arow[data-status*="On Hold"] .sstage,body.admin .arow[data-status*="Refused"] .sstage{color:#b23c30;background:#fbeceb;border-color:#f2ccc8}
-body.admin .actions{gap:7px}
+body.admin .arow[data-status*="On Hold"] .sstage::before,body.admin .arow[data-status*="Refused"] .sstage::before{background:#d2493c}
 body.admin .arow.arch .sstage{color:var(--faint);background:#f1f3f0;border-color:var(--line)}
-body.admin .form{padding:28px}
+body.admin .arow.arch .sstage::before{background:var(--faint)}
+/* actions */
+body.admin .actions{gap:7px}
+/* forms */
+body.admin .form{padding:30px}
 body.admin .form h1{margin-bottom:2px}
-body.admin .sec{margin-top:22px;padding-top:18px;border-top:1px solid var(--line2)}
+body.admin .gate{border-radius:18px}
+body.admin .sec{margin-top:24px;padding-top:20px;border-top:1px solid var(--line2)}
 body.admin .sec h4{font-size:11px;font-family:var(--mono);letter-spacing:.8px;text-transform:uppercase;color:var(--faint);font-weight:600;margin:0 0 14px}
 body.admin .field label{font-size:12px;font-weight:600}
-body.admin .field input,body.admin select,body.admin textarea{border-radius:10px;transition:border-color .15s ease,box-shadow .15s ease}
+body.admin .field input,body.admin select,body.admin textarea{border-radius:11px;transition:border-color .15s,box-shadow .15s}
 body.admin .field input:focus,body.admin select:focus,body.admin textarea:focus{border-color:var(--green);box-shadow:0 0 0 3px var(--green-soft)}
 body.admin .btn{border-radius:999px}
 body.admin .ltable th{background:var(--card2)}
 body.admin .ltable tr:hover td{background:var(--card2)}
-body.admin .linkcode{border-radius:10px}
+body.admin .linkcode{border-radius:11px}
 `;
 
 function page(title, body, opts = {}) {
@@ -1023,8 +1043,9 @@ function renderAdmin(clients, archived = []) {
     </div>`).join('');
   const body = `${filterCss}<div class="card ahero">
     <div class="ahero-l"><div class="mlabel">Consultant</div><h1>Active Files</h1>
-      <p class="sub">Add or edit a client, paste their SINP/IRCC status, and issue a one-time secure link (QR) or email it to the client.</p></div>
-    <div class="ahero-r"><a class="abtn ghost" href="/admin/log">Access log</a><a class="abtn" href="/admin/clients/new">+ Add Client</a></div>
+      <p class="sub">Add or edit a client, paste their SINP/IRCC status, and issue a one-time secure link (QR) or email it to the client.</p>
+      <div class="ahero-actions"><a class="abtn ghost" href="/admin/log">Access log</a><a class="abtn" href="/admin/clients/new">+ Add Client</a></div></div>
+    <div class="ahero-stat"><div class="statnum">${clients.length}</div><div class="statlbl">Active Files</div></div>
   </div>
   ${filterBar}
   <div class="card">${colHead}${rows || '<div class="arow"><div class="ameta">No active clients yet. Click &ldquo;Add Client&rdquo; to create one.</div></div>'}</div>
