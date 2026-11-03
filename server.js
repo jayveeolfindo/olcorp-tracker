@@ -11,6 +11,23 @@ const F = require('./lib/forms');
 const M = require('./lib/mailer');
 const DB = require('./db');
 const R = require('./render');
+const { trackFor } = require('./stages');
+
+// Classify a client's file as Permanent Residence or Temporary Residence, with a
+// friendly specific label, so client emails say which application the update is for.
+function appType(c) {
+  const tr = trackFor(c && c.stream);
+  const PR = { 'sinp': 'Permanent Residence', 'express': 'Permanent Residence',
+    'spousal-outland': 'Permanent Residence (Spousal Sponsorship)',
+    'spousal-inland': 'Permanent Residence (Spousal Sponsorship)' };
+  if (PR[tr]) return { isPR: true, category: 'Permanent Residence', label: PR[tr], subject: 'Permanent Residence' };
+  const TR = { 'study-permit': 'Study Permit', 'study-outside': 'Study Permit',
+    'visitor-visa': 'Visitor Visa', 'super-visa': 'Super Visa',
+    'stay-extension': 'Stay Extension', 'temp-sinp': 'Work Permit',
+    'temp': 'Work Permit', 'temp-outside': 'Work Permit' };
+  const label = TR[tr] || 'Temporary Residence';
+  return { isPR: false, category: 'Temporary Residence', label, subject: label };
+}
 
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
 
@@ -90,7 +107,10 @@ function latestNews(c) {
     eapr: 'Your application for permanent residence has been submitted to IRCC.',
     submitted: 'Your application has been submitted to IRCC.',
     aor: 'IRCC has acknowledged receipt of your application (AOR).',
+    sowp: 'Your open work permit has been issued.',
     bio: 'Your biometrics have been completed.',
+    sponsor: 'Your sponsor eligibility has been approved by IRCC.',
+    aip: 'Your application has received Approval in Principle (Stage 1). Congratulations!',
     prearrival: 'You have been invited to IRCC’s free Pre-Arrival Services.',
     process: 'Your application is being actively reviewed by IRCC.',
     medical: 'Your medical exam has passed.',
@@ -167,10 +187,17 @@ async function emailLink(c, link) {
     <p><a href="${esc(folderUrl)}" target="_blank" rel="noopener" style="display:inline-block;background:#fff;color:#161616;text-decoration:none;padding:10px 18px;border-radius:999px;font-weight:700;border:1.5px solid #161616">Open my documents folder</a></p>`
     : '';
   const secureNote = `For your privacy, this is a secure one-time link that expires in ${LINK_TTL_HOURS} hours. Opening it simply asks you to confirm your date of birth, and then you're in.`;
+  // Classify the file so the email clearly says Temporary vs Permanent Residence.
+  const at = appType(c);
+  const badgeLine = at.isPR ? 'Permanent Residence Application' : (at.label + ' · Temporary Residence');
+  const badgeTextLine = 'Application: ' + (at.isPR ? 'Permanent Residence' : (at.label + ' (Temporary Residence)'));
+  const bc = at.isPR ? { fg: '#41762f', bg: '#eef4ec', bd: '#d7e6d0' } : { fg: '#41586e', bg: '#eef1f3', bd: '#dde3e8' };
+  const badgeHtml = `<p style="margin:0 0 2px"><span style="display:inline-block;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;letter-spacing:.5px;text-transform:uppercase;font-weight:700;color:${bc.fg};background:${bc.bg};border:1px solid ${bc.bd};border-radius:999px;padding:4px 12px">${esc(badgeLine)}</span></p>`;
   let subject, text, html;
   if (isHold) {
-    subject = 'An update on your application';
+    subject = `An update on your ${at.subject} application`;
     text = `Hi ${first},\n\n` +
+      `${badgeTextLine}\n\n` +
       `I have an update on your application, and I wanted to reach out to you personally about it.\n\n` +
       `${news}\n\n` +
       `You can see where things stand any time on your personal tracker:\n${link}\n\n` +
@@ -179,6 +206,7 @@ async function emailLink(c, link) {
       SIG_TEXT;
     html = `<div style="font-family:-apple-system,Segoe UI,Arial,sans-serif;font-size:14px;color:#0a0a0a;line-height:1.5">
     <p>Hi ${esc(first)},</p>
+    ${badgeHtml}
     <p>I have an update on your application, and I wanted to reach out to you personally about it.</p>
     <p style="font-size:15.5px;font-weight:600;color:#161616">${esc(news)}</p>
     <p>You can see where things stand any time on your personal tracker:</p>
@@ -188,8 +216,9 @@ async function emailLink(c, link) {
     ${SIG_HTML}
   </div>`;
   } else {
-    subject = 'An update on your journey to Canada';
+    subject = `An update on your ${at.subject} application`;
     text = `Hi ${first},\n\n` +
+      `${badgeTextLine}\n\n` +
       `There's movement on your journey to Canada, and I couldn't wait to share it with you. I know how long this road can feel, so moments like this are worth celebrating.\n\n` +
       `${news}\n\n` +
       `${folderText}` +
@@ -199,6 +228,7 @@ async function emailLink(c, link) {
       SIG_TEXT;
     html = `<div style="font-family:-apple-system,Segoe UI,Arial,sans-serif;font-size:14px;color:#0a0a0a;line-height:1.5">
     <p>Hi ${esc(first)},</p>
+    ${badgeHtml}
     <p>There's movement on your journey to Canada, and I couldn't wait to share it with you. I know how long this road can feel, so moments like this are worth celebrating.</p>
     <p style="font-size:16.5px;font-weight:700;color:#161616">${esc(news)}</p>
     ${folderHtml}

@@ -120,11 +120,51 @@ code{font-family:var(--mono);font-size:11px;background:var(--slate-soft);padding
 .apptabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 2px 14px}
 .apptab{background:#fff;border:1.5px solid var(--line);color:var(--muted);border-radius:999px;padding:8px 16px;font-size:12.5px;font-weight:700;cursor:pointer}
 .apptab.on{background:var(--dark);color:#fff;border-color:var(--dark)}
+/* ===== Admin refresh — same visual language as the client tracker; scoped so client pages stay untouched ===== */
+body.admin .wrap{max-width:1120px}
+body.admin h1{font-size:23px;font-weight:800;letter-spacing:-.6px;margin:2px 0 0}
+body.admin .sub{font-size:13px;color:var(--muted);line-height:1.55;margin:8px 0 0;max-width:640px}
+body.admin a.back{display:inline-block;margin:4px 2px 14px}
+body.admin a.back:hover{color:var(--ink)}
+.ahero{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;flex-wrap:wrap;padding:22px 24px;margin:4px 0 16px}
+.ahero-l{flex:1;min-width:260px}.ahero .mlabel{margin-bottom:7px}
+.ahero-r{display:flex;gap:8px;flex-wrap:wrap;flex-shrink:0}
+body.admin .card{border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+body.admin .abtn{border:1.5px solid var(--dark);border-radius:999px;padding:8px 15px;font-size:12.5px;font-weight:700;line-height:1;transition:opacity .15s ease,background .15s ease,border-color .15s ease,color .15s ease}
+body.admin .abtn:hover{opacity:.92}
+body.admin .abtn.ghost{background:#fff;color:var(--muted);border-color:var(--line)}
+body.admin .abtn.ghost:hover{color:var(--ink);border-color:var(--faint);background:var(--card2);opacity:1}
+body.admin .filterbar{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:12px 14px}
+body.admin .filterbar input,body.admin .filterbar select{border-radius:10px}
+body.admin .arowhead{background:var(--card2);border-bottom:1px solid var(--line)}
+body.admin .arow{padding:16px 18px;border-top:1px solid var(--line2);transition:background .12s ease}
+body.admin .arow:hover{background:var(--card2)}
+body.admin .aname{font-size:14.5px;font-weight:700;letter-spacing:-.2px}
+body.admin .ameta{font-size:12px;color:var(--muted);margin-top:3px}
+body.admin .astatus{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+body.admin .sstage{display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:.3px;font-weight:600;color:#41586e;background:var(--slate-soft);border:1px solid #dde3e8;border-radius:999px;padding:5px 11px;line-height:1.25}
+body.admin .slabel{font-size:12px;color:var(--muted);line-height:1.4}
+body.admin .arow[data-status*="Approved"] .sstage,body.admin .arow[data-status*="Confirmed"] .sstage,body.admin .arow[data-status*="Issued"] .sstage{color:#41762f;background:var(--green-soft);border-color:#d7e6d0}
+body.admin .arow[data-status*="On Hold"] .sstage,body.admin .arow[data-status*="Refused"] .sstage{color:#b23c30;background:#fbeceb;border-color:#f2ccc8}
+body.admin .actions{gap:7px}
+body.admin .arow.arch .sstage{color:var(--faint);background:#f1f3f0;border-color:var(--line)}
+body.admin .form{padding:28px}
+body.admin .form h1{margin-bottom:2px}
+body.admin .sec{margin-top:22px;padding-top:18px;border-top:1px solid var(--line2)}
+body.admin .sec h4{font-size:11px;font-family:var(--mono);letter-spacing:.8px;text-transform:uppercase;color:var(--faint);font-weight:600;margin:0 0 14px}
+body.admin .field label{font-size:12px;font-weight:600}
+body.admin .field input,body.admin select,body.admin textarea{border-radius:10px;transition:border-color .15s ease,box-shadow .15s ease}
+body.admin .field input:focus,body.admin select:focus,body.admin textarea:focus{border-color:var(--green);box-shadow:0 0 0 3px var(--green-soft)}
+body.admin .btn{border-radius:999px}
+body.admin .ltable th{background:var(--card2)}
+body.admin .ltable tr:hover td{background:var(--card2)}
+body.admin .linkcode{border-radius:10px}
 `;
 
-function page(title, body) {
+function page(title, body, opts = {}) {
   const BASE = (process.env.BASE_URL || 'https://tracker.olcorp.ca').replace(/\/+$/, '');
   const OG_IMG = BASE + '/share.png';
+  const bodyClass = opts.admin ? ' class="admin"' : '';
   return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${esc(title)}</title>
 <meta property="og:type" content="website">
@@ -140,7 +180,7 @@ function page(title, body) {
 <meta name="twitter:description" content="Track your Canadian immigration application status with Olfindo Immigration Consulting Corp.">
 <meta name="twitter:image" content="${OG_IMG}">
 <style>${CSS}</style></head>
-<body><div class="wrap">
+<body${bodyClass}><div class="wrap">
 <div class="topbar"><span style="display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center"><img class="brandlogo" src="/logo.png" alt="olcorp.ca, Olfindo Immigration Consulting Corp"><span class="div">Client Application Tracker</span></span></div>
 ${body}
 </div></body></html>`;
@@ -934,7 +974,7 @@ function renderAdmin(clients, archived = []) {
     const hay = ((c.full_name || '') + ' ' + (c.noc || '') + ' ' + (c.status_label || '') + ' ' + statusText).toLowerCase();
     return `<div class="arow" data-search="${esc(hay)}" data-status="${esc(statusText)}">
       <div><div class="aname">${esc(c.full_name)}</div><div class="ameta">${esc(c.noc || '')}</div></div>
-      <div><div class="ameta">${esc(statusText)}</div><div class="ameta">${esc(c.status_label || '')}</div></div>
+      <div class="astatus"><span class="sstage">${esc(statusText)}</span>${c.status_label ? `<div class="slabel">${esc(c.status_label)}</div>` : ''}</div>
       <div class="actions">
         <a class="abtn ghost" href="/admin/clients/${esc(c.id)}/preview">View as client</a>
         <a class="abtn ghost" href="/admin/clients/${esc(c.id)}/edit">Edit</a>
@@ -981,14 +1021,16 @@ function renderAdmin(clients, archived = []) {
         <form method="POST" action="/admin/clients/${esc(c.id)}/delete" style="margin:0" onsubmit="return confirm('Permanently delete ${esc(c.full_name)} and all their access records? This cannot be undone.')"><button class="abtn ghost" style="color:#b23c30;border-color:#f2ccc8">Delete</button></form>
       </div>
     </div>`).join('');
-  const body = `${filterCss}<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px"><h1>Consultant · Active Files</h1>
-    <span style="display:flex;gap:8px"><a class="abtn ghost" href="/admin/log">Access log</a><a class="abtn" href="/admin/clients/new">+ Add Client</a></span></div>
-  <p class="sub">Add or edit a client, paste their SINP/IRCC status, and issue a one-time secure link (QR) or email it to the client.</p>
+  const body = `${filterCss}<div class="card ahero">
+    <div class="ahero-l"><div class="mlabel">Consultant</div><h1>Active Files</h1>
+      <p class="sub">Add or edit a client, paste their SINP/IRCC status, and issue a one-time secure link (QR) or email it to the client.</p></div>
+    <div class="ahero-r"><a class="abtn ghost" href="/admin/log">Access log</a><a class="abtn" href="/admin/clients/new">+ Add Client</a></div>
+  </div>
   ${filterBar}
   <div class="card">${colHead}${rows || '<div class="arow"><div class="ameta">No active clients yet. Click &ldquo;Add Client&rdquo; to create one.</div></div>'}</div>
   ${archived.length ? `<h1 style="font-size:16px;margin-top:26px">Archived Files</h1><div class="card">${archivedRows}</div>` : ''}
   ${filterJs}`;
-  return page('Admin · Client Application Tracker', body);
+  return page('Admin · Client Application Tracker', body, { admin: true });
 }
 
 // ---- access log ----
@@ -1006,7 +1048,7 @@ function renderLog(entries) {
   <div class="card" style="padding:6px 6px;overflow-x:auto"><table class="ltable">
     <thead><tr><th>When</th><th>Client</th><th>Method</th><th>Result</th><th>IP</th></tr></thead>
     <tbody>${rows || '<tr><td colspan="5" style="padding:16px">No entries yet.</td></tr>'}</tbody></table></div>`;
-  return page('Access Log · Client Application Tracker', body);
+  return page('Access Log · Client Application Tracker', body, { admin: true });
 }
 
 // Add / edit a client file.
@@ -1073,7 +1115,7 @@ function renderClientForm(c) {
       <p class="hint2">Tick this only when you want the client emailed about this change. The daily date refresh never emails.</p></div>
     <div class="sec"><button class="btn" style="max-width:240px">Save Client</button></div>
   </form>`;
-  return page(editing ? ('Edit · ' + c.full_name) : 'Add Client', body);
+  return page(editing ? ('Edit · ' + c.full_name) : 'Add Client', body, { admin: true });
 }
 
 // Paste SINP + IRCC status text copied from the portals.
@@ -1107,7 +1149,7 @@ function renderStatusForm(c) {
     </div>
     <div class="sec"><button class="btn" style="max-width:240px">Save Status</button></div>
   </form>`;
-  return page('Update Status · ' + c.full_name, body);
+  return page('Update Status · ' + c.full_name, body, { admin: true });
 }
 
 function renderLinkIssued(c, link, qrDataUrl) {
@@ -1124,7 +1166,7 @@ function renderLinkIssued(c, link, qrDataUrl) {
       : `<p class="hint2" style="margin-top:16px">Add a client email on the Edit screen to email links directly.</p>`}
     <form method="POST" action="/admin/clients/${esc(c.id)}/revoke" style="margin-top:12px"><button class="signout">Revoke outstanding links & sessions</button></form>
   </div>`;
-  return page('Access Link · ' + c.full_name, body);
+  return page('Access Link · ' + c.full_name, body, { admin: true });
 }
 
 module.exports = { renderLogin, renderVerify, renderTracker, renderAdmin, renderLog, renderLinkIssued, renderClientForm, renderStatusForm, page };
