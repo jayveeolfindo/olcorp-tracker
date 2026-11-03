@@ -155,6 +155,8 @@ body.admin .abtn{border:1.5px solid var(--dark);border-radius:999px;padding:9px 
 body.admin .abtn:hover{opacity:.92}
 body.admin .abtn.ghost{background:#fff;color:var(--muted);border-color:var(--line)}
 body.admin .abtn.ghost:hover{color:var(--ink);border-color:var(--faint);background:var(--card2);opacity:1}
+body.admin .wsentbtn{background:#f1f3f0;color:var(--faint);border-color:var(--line);font-weight:700}
+body.admin .wsentbtn:hover{background:var(--card2);color:var(--muted);opacity:1}
 /* filter toolbar */
 body.admin .filterbar{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:14px 16px}
 body.admin .filterbar input,body.admin .filterbar select{border-radius:11px}
@@ -999,8 +1001,7 @@ function renderAdmin(clients, archived = []) {
     if (!c.client_email) {
       welcomeCell = `<span class="abtn ghost" style="opacity:.5;cursor:not-allowed" title="No client email on file. Add one on the Edit screen to send a welcome.">Send welcome (no email)</span>`;
     } else if (wsent) {
-      welcomeCell = `<span class="wsent" title="Welcome email sent ${esc(wsent)}">&#10003; Welcome sent &middot; ${esc(wsent)}</span>`
-        + `<form method="POST" action="/admin/clients/${esc(c.id)}/welcome" style="margin:0" onsubmit="return confirm('Resend the welcome email with a fresh secure tracker link to ${esc(c.client_email)}?')"><button class="abtn ghost">Resend</button></form>`;
+      welcomeCell = `<form method="POST" action="/admin/clients/${esc(c.id)}/welcome" style="margin:0" onsubmit="return confirm('Resend the welcome email with a fresh secure tracker link to ${esc(c.client_email)}?')"><button class="abtn wsentbtn" title="Welcome email sent ${esc(wsent)} &middot; click to resend">&#10003; Welcome sent</button></form>`;
     } else {
       welcomeCell = `<form method="POST" action="/admin/clients/${esc(c.id)}/welcome" style="margin:0" onsubmit="return confirm('Send the welcome email with a secure tracker link to ${esc(c.client_email)}?')"><button class="abtn">Send welcome</button></form>`;
     }
