@@ -887,10 +887,14 @@ function appBlock(c, idx, active, ctx = {}) {
   const circ = (2 * Math.PI * 50).toFixed(1);
   const dashoff = (2 * Math.PI * 50 * (1 - pct / 100)).toFixed(1);
   const sync = esc(fmtSync(c.updated_at)).toUpperCase().replace(/-/g, ' ');
+  const apprLabel = appTypeLabel(c);
+  const apprMsg = (apprLabel === 'Permanent Residence')
+    ? 'Your permanent residence has been approved. Welcome to your new home country! Thank you for trusting us with your journey.'
+    : ('Your ' + apprLabel + ' has been approved. Thank you for trusting us with your journey.');
   const celebrate = isApproved ? `<div class="card" style="overflow:hidden"><div class="celebrate">
       <div class="emblem">${useIcon('i-spark')}</div>
       <h2>Congratulations, ${esc(first)}${hasFamily ? ' and family' : ''}!</h2>
-      <p>Your permanent residence has been approved. Welcome to your new home country! Thank you for trusting us with your journey.</p></div></div>` : '';
+      <p>${esc(apprMsg)}</p></div></div>` : '';
   const nextCard = (!isApproved && nextStep) ? `<div class="card"><div class="next">
       <div class="ic">${useIcon(nextIcon)}</div>
       <div class="ntxt"><div class="nlabel">What happens next</div><div class="nstep">${esc(nextStep)}</div>
