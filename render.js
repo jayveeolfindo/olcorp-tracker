@@ -855,9 +855,9 @@ function appBlock(c, idx, active, ctx = {}) {
     nextIcon = (nd.s.key === 'copr' || nd.s.key === 'issued') ? 'i-home' : 'i-mail';
     if (STG[ci].key === 'intake') nextFlag = 'Please send your documents';
     const isPrTrack = (track === 'sinp' || track === 'express' || track === 'spousal-outland' || track === 'spousal-inland');
-    // e-APR Submitted in progress: the PR application is being assembled and filed, so
-    // the client keeps supplying the additional requirements that complete the file.
-    if (STG[ci].key === 'eapr' && isPrTrack) nextFlag = 'Action Needed: Please continue completing the additional requirements for your PR application.';
+    // e-APR Submitted to IRCC: the permanent residence application has been filed, so
+    // there is nothing further for the client to do except wait for the AOR.
+    if (STG[ci].key === 'eapr' && isPrTrack) nextFlag = 'No action needed from you. Your e-APR has been submitted to IRCC and we are now waiting for the Acknowledgement of Receipt (AOR).';
     if (nd.s.key === 'bio' && isPrTrack) {
       nextFlag = 'Action Needed: Please coordinate your availability to our office.';
       nextMeta = (est ? ('Expected around ' + String(est).replace(/^Est\.\s*/i, '') + '. ') : '') + 'Please send us a few dates and times that work for you so we can book your biometrics appointment.';
