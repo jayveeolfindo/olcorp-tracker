@@ -16,16 +16,29 @@ const { trackFor } = require('./stages');
 // Classify a client's file as Permanent Residence or Temporary Residence, with a
 // friendly specific label, so client emails say which application the update is for.
 function appType(c) {
-  const tr = trackFor(c && c.stream);
+  const stream = String((c && c.stream) || '');
+  const tr = trackFor(stream);
   const PR = { 'sinp': 'Permanent Residence', 'express': 'Permanent Residence',
     'spousal-outland': 'Permanent Residence (Spousal Sponsorship)',
     'spousal-inland': 'Permanent Residence (Spousal Sponsorship)' };
   if (PR[tr]) return { isPR: true, category: 'Permanent Residence', label: PR[tr], subject: 'Permanent Residence' };
-  const TR = { 'study-permit': 'Study Permit', 'study-outside': 'Study Permit',
-    'visitor-visa': 'Visitor Visa', 'super-visa': 'Super Visa',
-    'stay-extension': 'Stay Extension', 'temp-sinp': 'Work Permit',
-    'temp': 'Work Permit', 'temp-outside': 'Work Permit' };
-  const label = TR[tr] || 'Temporary Residence';
+  // Temporary Residence: name the specific permit from the stream text so extension
+  // files (work/study/visitor) are labelled correctly. trackFor routes every
+  // extension to the generic 'temp' track for the timeline, so the email label is
+  // derived here from the stream rather than from the track.
+  let label;
+  if (/super\s*visa/i.test(stream)) label = 'Super Visa';
+  else if (/study\s*permit/i.test(stream)) label = 'Study Permit';
+  else if (/visitor\s*record/i.test(stream)) label = 'Visitor Record';
+  else if (/visitor\s*visa|temporary resident visa|\bTRV\b/i.test(stream)) label = 'Visitor Visa';
+  else if (/work\s*permit/i.test(stream)) label = 'Work Permit';
+  else {
+    const TR = { 'study-permit': 'Study Permit', 'study-outside': 'Study Permit',
+      'visitor-visa': 'Visitor Visa', 'super-visa': 'Super Visa',
+      'stay-extension': 'Stay Extension', 'temp-sinp': 'Work Permit',
+      'temp': 'Work Permit', 'temp-outside': 'Work Permit' };
+    label = TR[tr] || 'Temporary Residence';
+  }
   return { isPR: false, category: 'Temporary Residence', label, subject: label };
 }
 
