@@ -206,6 +206,20 @@ async function emailLink(c, link) {
   const badgeTextLine = 'Application: ' + (at.isPR ? 'Permanent Residence' : (at.label + ' (Temporary Residence)'));
   const bc = at.isPR ? { fg: '#41762f', bg: '#eef4ec', bd: '#d7e6d0' } : { fg: '#41586e', bg: '#eef1f3', bd: '#dde3e8' };
   const badgeHtml = `<p style="margin:0 0 2px"><span style="display:inline-block;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;letter-spacing:.5px;text-transform:uppercase;font-weight:700;color:${bc.fg};background:${bc.bg};border:1px solid ${bc.bd};border-radius:999px;padding:4px 12px">${esc(badgeLine)}</span></p>`;
+  const isCopr = info.key === 'copr';
+  const GR = 'https://www.google.com/maps/place/Olcorp.ca+Immigration+%7C+Olcorp+Technologies/@50.4506077,-104.6125027,17z/data=!3m1!5s0x531bfeef414867a9:0x770e160cdcc5ae69!4m8!3m7!1s0xa6a634affbb34cb7:0x9caf7837261a2a88!8m2!3d50.4506043!4d-104.6099278!9m1!1b1!16s%2Fg%2F11pdht8k81?entry=ttu';
+  const FB = 'https://www.facebook.com/olcorp.ca/reviews';
+  const PR_STATUS_URL = 'https://www.canada.ca/en/immigration-refugees-citizenship/services/permanent-residents/status.html';
+  const SETTLE_URL = 'https://www.canada.ca/en/immigration-refugees-citizenship/services/settle-canada.html';
+  const coprText = isCopr ? (
+    `Now that your status is confirmed, here is what it means for you. As a permanent resident you can live, work, and study anywhere in Canada, you are covered by most social benefits including health care, and you are protected under Canadian law. You can also apply for Canadian citizenship once you meet the requirements. The full details are here:\n${PR_STATUS_URL}\nWhen you are ready to settle in, this page walks through the first steps like getting your SIN and health card:\n${SETTLE_URL}\n\n` +
+    `If your experience with Olcorp has been a positive one, I would be grateful if you could share a short review. It helps other families find trustworthy help on their own journey to Canada. You can leave one on Google (${GR}) or on Facebook (${FB}). Thank you so much, it truly means a lot.\n\n`
+  ) : '';
+  const coprHtml = isCopr ? (
+    `<p>Now that your status is confirmed, here is what it means for you. As a permanent resident you can live, work, and study anywhere in Canada, you are covered by most social benefits including health care, and you are protected under Canadian law. You can also apply for Canadian citizenship once you meet the requirements.</p>
+    <p>Learn more: <a href="${PR_STATUS_URL}">Understand permanent resident status</a> and <a href="${SETTLE_URL}">Settling in Canada</a> (first steps like your SIN and health card).</p>
+    <p>If your experience with Olcorp has been a positive one, I would be grateful if you could share a short review. It helps other families find trustworthy help on their own journey to Canada. You can leave one on <a href="${GR}">Google</a> or on <a href="${FB}">Facebook</a>. Thank you so much, it truly means a lot.</p>`
+  ) : '';
   let subject, text, html;
   if (isHold) {
     subject = `An update on your ${at.subject} application`;
@@ -229,13 +243,14 @@ async function emailLink(c, link) {
     ${SIG_HTML}
   </div>`;
   } else {
-    subject = `An update on your ${at.subject} application`;
+    subject = isCopr ? `Congratulations ${first}, you are now a permanent resident of Canada!` : `An update on your ${at.subject} application`;
     text = `Hi ${first},\n\n` +
       `${badgeTextLine}\n\n` +
       `There's movement on your journey to Canada, and I couldn't wait to share it with you. I know how long this road can feel, so moments like this are worth celebrating.\n\n` +
       `${news}\n\n` +
+      `${coprText}` +
       `${folderText}` +
-      `Every milestone brings you one step closer, and you can follow the whole journey on your personal tracker: your timeline so far, where things stand today, and what comes next.\n${link}\n\n` +
+      `${isCopr ? 'You can follow your full journey any time on your personal tracker:' : 'Every milestone brings you one step closer, and you can follow the whole journey on your personal tracker: your timeline so far, where things stand today, and what comes next.'}\n${link}\n\n` +
       `${secureNote}\n\n` +
       `This means a great deal to you and your family, and it's a real privilege to walk through it with you. If you have any questions at all, just reply to this email. I'm always glad to hear from you.\n\n` +
       SIG_TEXT;
@@ -244,8 +259,9 @@ async function emailLink(c, link) {
     ${badgeHtml}
     <p>There's movement on your journey to Canada, and I couldn't wait to share it with you. I know how long this road can feel, so moments like this are worth celebrating.</p>
     <p style="font-size:16.5px;font-weight:700;color:#161616">${esc(news)}</p>
+    ${coprHtml}
     ${folderHtml}
-    <p>Every milestone brings you one step closer, and you can follow the whole journey on your personal tracker: your timeline so far, where things stand today, and what comes next.</p>
+    <p>${isCopr ? 'You can follow your full journey any time on your personal tracker:' : 'Every milestone brings you one step closer, and you can follow the whole journey on your personal tracker: your timeline so far, where things stand today, and what comes next.'}</p>
     <p><a href="${link}" style="display:inline-block;background:#161616;color:#fff;text-decoration:none;padding:11px 20px;border-radius:999px;font-weight:700">View my application</a></p>
     <p style="color:#5b6b78;font-size:12.5px">${esc(secureNote)}</p>
     <p>This means a great deal to you and your family, and it's a real privilege to walk through it with you. If you have any questions at all, just reply to this email. I'm always glad to hear from you.</p>
