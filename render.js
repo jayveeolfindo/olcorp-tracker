@@ -855,9 +855,9 @@ function appBlock(c, idx, active, ctx = {}) {
     nextIcon = (nd.s.key === 'copr' || nd.s.key === 'issued') ? 'i-home' : 'i-mail';
     if (STG[ci].key === 'intake') nextFlag = 'Please send your documents';
     const isPrTrack = (track === 'sinp' || track === 'express' || track === 'spousal-outland' || track === 'spousal-inland');
-    // e-APR Submitted to IRCC: the permanent residence application has been filed, so
-    // there is nothing further for the client to do except wait for the AOR.
-    if (STG[ci].key === 'eapr' && isPrTrack) nextFlag = 'No action needed from you. Your e-APR has been submitted to IRCC and we are now waiting for the Acknowledgement of Receipt (AOR).';
+    // e-APR Submitted in progress: the PR application is being assembled and filed, so
+    // the client keeps supplying the additional requirements that complete the file.
+    if (STG[ci].key === 'eapr' && isPrTrack) nextFlag = 'Action Needed: Please continue completing the additional requirements for your PR application.';
     if (nd.s.key === 'bio' && isPrTrack) {
       nextFlag = 'Action Needed: Please coordinate your availability to our office.';
       nextMeta = (est ? ('Expected around ' + String(est).replace(/^Est\.\s*/i, '') + '. ') : '') + 'Please send us a few dates and times that work for you so we can book your biometrics appointment.';
@@ -1001,7 +1001,46 @@ function renderTracker(input, opts = {}) {
     ? `<script>(function(){var tabs=document.querySelectorAll('.apptab'),blocks=document.querySelectorAll('.appblock');tabs.forEach(function(t){t.addEventListener('click',function(){var tgt=t.getAttribute('data-target');tabs.forEach(function(x){var on=x===t;x.style.borderColor=on?'var(--ink)':'var(--line)';x.style.background=on?'var(--ink)':'#fff';x.style.color=on?'#fff':'var(--muted)';});blocks.forEach(function(b){b.style.display=(b.getAttribute('data-app')===tgt)?'':'none';});});});})();</script>`
     : '';
 
-  const body = `${brand}${clientbar}${greet}${tabs}${blocks}${consultant}${foot}${script}`;
+  // Refer a friend: one minimalist button. On tap it asks how the client would like
+  // to share, then shares either our Facebook Page or our website. The website link
+  // carries a ?ref tag so a new visit traces back to who referred them.
+  const refCode = encodeURIComponent(person.id || '');
+  const refSiteUrl = 'https://olcorp.ca/?ref=' + refCode;
+  const refFbUrl = 'https://www.facebook.com/olcorp.ca';
+  const refMsg = "I've been getting help from Olcorp.ca Immigration Consulting (Jayvee Olfindo, RCIC) with my Canadian application. If you need help too, here is where to reach them:";
+  const referral = `<div class="card" style="margin-top:14px">
+    <div class="consult">
+      <div class="avatar"><svg class="icon" style="width:24px;height:24px" viewBox="0 0 24 24"><use href="#i-userplus"/></svg></div>
+      <div>
+        <div class="cn">Know someone who needs help?</div>
+        <div class="cm">Refer a friend or family member for their Canadian immigration.</div>
+      </div>
+    </div>
+    <div class="actions" id="refStartWrap">
+      <button type="button" class="btn primary" style="font-family:inherit" id="refStart">${useIcon('i-userplus')} Refer a Friend</button>
+    </div>
+    <div class="actions" id="refChoices" style="display:none">
+      <div style="flex-basis:100%;font-size:12px;color:var(--muted);margin:0 2px 2px">How would you like to share Olcorp?</div>
+      <button type="button" class="btn ghost" style="font-family:inherit" data-share="fb">${useIcon('i-message')} Our Facebook Page</button>
+      <button type="button" class="btn ghost" style="font-family:inherit" data-share="site">${useIcon('i-home')} Our Website</button>
+    </div>
+  </div>`;
+  const refScript = `<script>(function(){
+    var targets={fb:${JSON.stringify(refFbUrl)},site:${JSON.stringify(refSiteUrl)}};
+    var msg=${JSON.stringify(refMsg)};
+    function toast(t){var d=document.createElement('div');d.textContent=t;d.style.cssText='position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:11px 18px;border-radius:12px;font-size:13px;z-index:9999;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:88%;text-align:center';document.body.appendChild(d);setTimeout(function(){d.style.transition='opacity .4s';d.style.opacity='0';},2200);setTimeout(function(){d.remove();},2700);}
+    function go(url){
+      if(navigator.share){navigator.share({title:'Olcorp.ca Immigration Consulting',text:msg,url:url}).catch(function(){});return;}
+      var full=msg+' '+url;
+      if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(full).then(function(){toast('Copied. Paste it to your friend to share.');},function(){window.open(url,'_blank','noopener');});}
+      else{window.open(url,'_blank','noopener');}
+    }
+    var start=document.getElementById('refStart'),wrap=document.getElementById('refStartWrap'),choices=document.getElementById('refChoices');
+    if(start){start.addEventListener('click',function(){if(wrap)wrap.style.display='none';if(choices)choices.style.display='';});}
+    document.querySelectorAll('[data-share]').forEach(function(b){b.addEventListener('click',function(){go(targets[b.getAttribute('data-share')]);});});
+  })();</script>`;
+
+  const body = `${brand}${clientbar}${greet}${tabs}${blocks}${consultant}${referral}${foot}${script}${refScript}`;
   return monoPage(`${person.full_name} · Application Tracker`, body);
 }
 
