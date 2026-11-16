@@ -730,13 +730,18 @@ function appBlock(c, idx, active, ctx = {}) {
     const hasRealDate = dv && !isEstV(dv);
     const VERIFY_STEP = (s.key === 'prearrival' || s.key === 'medical' || s.key === 'bg');
     const datelessOptional = VERIFY_STEP && (i < ci) && !hasRealDate;
+    // A medical with a real date on file has been passed, even when the file's stage
+    // has not reached the Medical step yet (IRCC can clear the medical before
+    // biometrics are given). Tick it as done instead of showing it as a
+    // still-upcoming step with the generic "review" wording.
+    const earlyMedicalDone = !onHold && s.key === 'medical' && hasRealDate && i > ci;
     // A Final Decision date means pre-arrival has already played out: an Invitation
     // to Pre-Arrival Services that never arrived will not arrive now. So at the Final
     // Decision stage, show a dateless Pre-Arrival step as completed (ticked) with no
     // date, rather than leaving it pending or showing an estimate.
     const atDecisionStage = !!STG[ci] && STG[ci].key === 'decision';
     const preArrivalBlankDone = isPR && !onHold && atDecisionStage && s.key === 'prearrival' && !hasRealDate;
-    const isDone = preArrivalBlankDone || ((i < ci || terminalDone) && !datelessOptional);
+    const isDone = preArrivalBlankDone || earlyMedicalDone || ((i < ci || terminalDone) && !datelessOptional);
     const cls = preArrivalBlankDone ? 'done' : (datelessOptional ? 'pending' : (isDone ? 'done' : (i === ci ? 'current' : 'pending')));
     // The current step (medical, final decision, etc.) reads "In Progress" and,
     // when a real (non-estimate) date is on file, appends it: "In Progress · <date>".
@@ -756,7 +761,7 @@ function appBlock(c, idx, active, ctx = {}) {
       // whether the stage has passed it or not yet reached it.
       estStr = preEst;
       when = `<div class="when est">${esc(preEst)}</div>`;
-    } else if (i > ci && !onHold) {
+    } else if (i > ci && !onHold && !earlyMedicalDone) {
       // not yet reached: show the forward-projected estimate (never a past month)
       estStr = estAt[i] || '';
       when = `<div class="when est">${esc(estStr)}</div>`;
@@ -812,6 +817,9 @@ function appBlock(c, idx, active, ctx = {}) {
     }
     descs = descs.map((d, i) => [d, i]).sort((a, b) => (a[0]._eff - b[0]._eff) || (a[1] - b[1])).map(x => x[0]);
   }
+  // Steps ticked ahead of the file's stage (a medical passed before biometrics)
+  // count toward the "N of M complete" figure, which otherwise keys off the stage.
+  const earlyDoneCount = descs.filter(d => d.isDone && d.i > ci).length;
   const steps = descs.map((d, pos) => {
     const inner = d.isDone ? useIcon('i-check') : (pos + 1);
     let when = '';
@@ -918,7 +926,7 @@ function appBlock(c, idx, active, ctx = {}) {
       <div class="bsync">SYNCED ${sync}</div></div>
   </div>
   ${nextCard}
-  <div class="card"><div class="sec-h"><span class="t">Your Application Journey</span><span class="meta">${isApproved ? STG.length : Math.max(ci, 0)} of ${STG.length} complete</span></div>
+  <div class="card"><div class="sec-h"><span class="t">Your Application Journey</span><span class="meta">${isApproved ? STG.length : Math.max(ci, 0) + earlyDoneCount} of ${STG.length} complete</span></div>
     <div class="steps">${steps}</div></div>
   <div class="card"><div class="sec-h"><span class="t">IRCC Application Status</span><span class="meta">SYNCED ${sync}</span></div>${irccBody}</div>
   ${reassureCard}
