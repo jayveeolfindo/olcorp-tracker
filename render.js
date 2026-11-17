@@ -1048,7 +1048,9 @@ function renderTracker(input, opts = {}) {
     document.querySelectorAll('[data-share]').forEach(function(b){b.addEventListener('click',function(){go(targets[b.getAttribute('data-share')]);});});
   })();</script>`;
 
-  const body = `${brand}${clientbar}${greet}${tabs}${blocks}${consultant}${referral}${foot}${script}${refScript}`;
+  // Refer a Friend card is built above but switched off for now. Set to true to show it.
+  const SHOW_REFERRAL = false;
+  const body = `${brand}${clientbar}${greet}${tabs}${blocks}${consultant}${SHOW_REFERRAL ? referral : ''}${foot}${script}${SHOW_REFERRAL ? refScript : ''}`;
   return monoPage(`${person.full_name} · Application Tracker`, body);
 }
 
