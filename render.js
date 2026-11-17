@@ -866,12 +866,21 @@ function appBlock(c, idx, active, ctx = {}) {
       if (!descs[j].isDone && !descs[j].isCurrent) { nd = descs[j]; break; }
     }
     if (!nd) nd = descs[descs.length - 1];
+    const isPrTrack = (track === 'sinp' || track === 'express' || track === 'spousal-outland' || track === 'spousal-inland');
+    // Every PR applicant gives biometrics again for the PR application, and IRCC asks
+    // for them right after the AOR. So on every PR track, once the AOR is in and
+    // biometrics are still outstanding, biometrics is the next thing the client
+    // sees, even where the track lists another step in between (the open work
+    // permit on an inland spousal file).
+    if (isPrTrack) {
+      const aorD = descs.find(d => d.s.key === 'aor'), bioD = descs.find(d => d.s.key === 'bio');
+      if (aorD && aorD.isDone && bioD && !bioD.isDone && !bioD.isCurrent) nd = bioD;
+    }
     nextStep = nd.s.t;
     const est = nd.estStr || estAt[nd.i] || '';
     nextMeta = est ? ('Expected around ' + String(est).replace(/^Est\.\s*/i, '') + '.') : 'We will update you as soon as there is movement.';
     nextIcon = (nd.s.key === 'copr' || nd.s.key === 'issued') ? 'i-home' : 'i-mail';
     if (STG[ci].key === 'intake') nextFlag = 'Please send your documents';
-    const isPrTrack = (track === 'sinp' || track === 'express' || track === 'spousal-outland' || track === 'spousal-inland');
     // e-APR Submitted in progress: the PR application is being assembled and filed, so
     // the client keeps supplying the additional requirements that complete the file.
     if (STG[ci].key === 'eapr' && isPrTrack) nextFlag = 'Action Needed: Please continue completing the additional requirements for your PR application.';
