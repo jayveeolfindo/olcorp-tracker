@@ -587,9 +587,14 @@ function appBlock(c, idx, active, ctx = {}) {
   // issued) is the end of the line: the whole bar fills solid green at 100%,
   // not a faded "current" final segment at 95%.
   const atTerminal = !onHold && !!STG[ci] && (STG[ci].key === 'copr' || STG[ci].key === 'issued');
-  const seg = STG.map((s, i) => `<i class="${(i < ci || (atTerminal && i === ci)) ? 'on' : (i === ci ? 'cur' : '')}"></i>`).join('');
-  const pct = atTerminal ? 100 : Math.round(((ci + 0.5) / STG.length) * 100);
   const isEstV = v => !!v && /^\s*est\.?\b/i.test(String(v));
+  // The AOR is a single event, not a process: once its date is on file, IRCC has
+  // acknowledged the application and there is nothing left to process on that
+  // step. So a file sitting at the AOR stage with a real AOR date shows the step
+  // as completed (ticked, plain date, solid bar segment), never "In Progress".
+  const aorReceived = !onHold && !!STG[ci] && STG[ci].key === 'aor' && !!dates.aor && !isEstV(dates.aor);
+  const seg = STG.map((s, i) => `<i class="${(i < ci || ((atTerminal || aorReceived) && i === ci)) ? 'on' : (i === ci ? 'cur' : '')}"></i>`).join('');
+  const pct = atTerminal ? 100 : Math.round(((ci + (aorReceived ? 1 : 0.5)) / STG.length) * 100);
   // --- Forward-projected estimates for not-yet-reached steps -------------------
   // Stored "Est." dates are typed once at intake and go stale: a past month reads
   // as overdue even when the file is on track. Instead, project each pending step
@@ -741,7 +746,9 @@ function appBlock(c, idx, active, ctx = {}) {
     // date, rather than leaving it pending or showing an estimate.
     const atDecisionStage = !!STG[ci] && STG[ci].key === 'decision';
     const preArrivalBlankDone = isPR && !onHold && atDecisionStage && s.key === 'prearrival' && !hasRealDate;
-    const isDone = preArrivalBlankDone || earlyMedicalDone || ((i < ci || terminalDone) && !datelessOptional);
+    // AOR received (dated) while the file is still at the AOR stage: done, see above.
+    const receivedDone = aorReceived && i === ci;
+    const isDone = preArrivalBlankDone || earlyMedicalDone || receivedDone || ((i < ci || terminalDone) && !datelessOptional);
     const cls = preArrivalBlankDone ? 'done' : (datelessOptional ? 'pending' : (isDone ? 'done' : (i === ci ? 'current' : 'pending')));
     // The current step (medical, final decision, etc.) reads "In Progress" and,
     // when a real (non-estimate) date is on file, appends it: "In Progress · <date>".
@@ -749,7 +756,7 @@ function appBlock(c, idx, active, ctx = {}) {
     // client as a finalized decision, while still showing when the stage started.
     // The one exception is a refusal hold: there the Final Decision has been
     // received, so its date shows plainly, never "In Progress".
-    const isCurrent = (i === ci) && !terminalDone;
+    const isCurrent = (i === ci) && !terminalDone && !receivedDone;
     const heldDecision = onHold && s.key === 'decision';
     let when, estStr = '';
     if (isCurrent && !heldDecision) {
@@ -817,9 +824,10 @@ function appBlock(c, idx, active, ctx = {}) {
     }
     descs = descs.map((d, i) => [d, i]).sort((a, b) => (a[0]._eff - b[0]._eff) || (a[1] - b[1])).map(x => x[0]);
   }
-  // Steps ticked ahead of the file's stage (a medical passed before biometrics)
-  // count toward the "N of M complete" figure, which otherwise keys off the stage.
-  const earlyDoneCount = descs.filter(d => d.isDone && d.i > ci).length;
+  // Steps ticked at or ahead of the file's stage (an AOR already received, a medical
+  // passed before biometrics) count toward the "N of M complete" figure, which
+  // otherwise keys off the stage.
+  const earlyDoneCount = descs.filter(d => d.isDone && d.i >= ci).length;
   const steps = descs.map((d, pos) => {
     const inner = d.isDone ? useIcon('i-check') : (pos + 1);
     let when = '';
@@ -851,7 +859,8 @@ function appBlock(c, idx, active, ctx = {}) {
   let nextStep = '', nextMeta = '', nextIcon = 'i-mail', nextFlag = 'No action needed from you';
   if (onHold) { nextStep = 'Final Decision Received'; nextMeta = 'Please contact our office so we can review the decision with you.'; nextIcon = 'i-message'; nextFlag = 'Please contact our office'; }
   else if (!isApproved) {
-    const curPos = descs.findIndex(d => d.isCurrent);
+    // Anchor on the file's stage step, which is not "current" once a dated AOR ticks it.
+    const curPos = descs.findIndex(d => d.i === ci);
     let nd = null;
     for (let j = (curPos >= 0 ? curPos + 1 : 0); j < descs.length; j++) {
       if (!descs[j].isDone && !descs[j].isCurrent) { nd = descs[j]; break; }
