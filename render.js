@@ -744,7 +744,9 @@ function appBlock(c, idx, active, ctx = {}) {
     // to Pre-Arrival Services that never arrived will not arrive now. So at the Final
     // Decision stage, show a dateless Pre-Arrival step as completed (ticked) with no
     // date, rather than leaving it pending or showing an estimate.
-    const atDecisionStage = !!STG[ci] && STG[ci].key === 'decision';
+    // The same holds once PR is confirmed (COPR): the step is ticked, never left
+    // looking outstanding beside "11 of 11 complete".
+    const atDecisionStage = !!STG[ci] && (STG[ci].key === 'decision' || STG[ci].key === 'copr');
     const preArrivalBlankDone = isPR && !onHold && atDecisionStage && s.key === 'prearrival' && !hasRealDate;
     // AOR received (dated) while the file is still at the AOR stage: done, see above.
     const receivedDone = aorReceived && i === ci;
@@ -1224,6 +1226,7 @@ function renderClientForm(c) {
 
     <div class="sec"><h4>Milestone Dates <span class="hint2">(optional, shown under each step)</span></h4>
       <div class="field"><label>Current Work Permit Expiration <span class="hint2">(shown on a PR file whenever set, e.g. the expiry of a newly issued permit; leave blank to hide)</span></label><input name="wp_expiry" value="${esc(dates.wp_expiry || '')}" placeholder="e.g. Oct 18, 2027"></div>
+      <div class="field"><label style="display:flex;align-items:center;gap:8px"><input type="checkbox" name="stage_family" value="true" style="width:auto"${(dates.family === true || /^(true|yes)$/i.test(String(dates.family || ''))) ? ' checked' : ''}> Approved Together With Family <span class="hint2">(the approval banner then reads "Congratulations, Name and family!")</span></label></div>
       <div class="row2">
         <div class="field"><label>PR Portal Tab 1 Email Received <span class="hint2">(sub-step under Final Decision)</span></label><input name="stage_pr_portal_tab1" value="${esc(dates.pr_portal_tab1 || '')}" placeholder="e.g. Dec 1, 2026"></div>
         <div class="field"><label>PR Portal Tab 2 Email Received <span class="hint2">(sub-step under Final Decision)</span></label><input name="stage_pr_portal_tab2" value="${esc(dates.pr_portal_tab2 || '')}" placeholder="e.g. Dec 15, 2026"></div>
