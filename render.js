@@ -739,7 +739,9 @@ function appBlock(c, idx, active, ctx = {}) {
     // has not reached the Medical step yet (IRCC can clear the medical before
     // biometrics are given). Tick it as done instead of showing it as a
     // still-upcoming step with the generic "review" wording.
-    const earlyMedicalDone = !onHold && s.key === 'medical' && hasRealDate && i > ci;
+    // The same goes for the Invitation to Pre-Arrival Services Letter: once it has a
+    // real date the letter has been received, even if the stage is still at AOR.
+    const earlyMedicalDone = !onHold && (s.key === 'medical' || s.key === 'prearrival') && hasRealDate && i > ci;
     // A Final Decision date means pre-arrival has already played out: an Invitation
     // to Pre-Arrival Services that never arrived will not arrive now. So at the Final
     // Decision stage, show a dateless Pre-Arrival step as completed (ticked) with no
