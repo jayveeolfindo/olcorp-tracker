@@ -136,6 +136,10 @@ function latestNews(c) {
   };
   let bestKey = null, bestT = -Infinity;
   for (const k in NEWS) { const t = parse(sd[k]); if (t != null && t > bestT) { bestT = t; bestKey = k; } }
+  // An approval dated the same day as another step (a permit approved on its Final
+  // Decision date, a COPR issued the day of the decision) is the news that matters,
+  // so the terminal milestone wins the tie instead of the step listed before it.
+  for (const k of ['issued', 'copr']) { const t = parse(sd[k]); if (t != null && t >= bestT) { bestT = t; bestKey = k; } }
   return bestKey ? { key: bestKey, text: NEWS[bestKey] } : { key: null, text: 'There is an update on your application.' };
 }
 // Inline logo for the signature, embedded by Content-ID so it always renders in
