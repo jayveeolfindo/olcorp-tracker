@@ -588,13 +588,17 @@ function appBlock(c, idx, active, ctx = {}) {
   // not a faded "current" final segment at 95%.
   const atTerminal = !onHold && !!STG[ci] && (STG[ci].key === 'copr' || STG[ci].key === 'issued');
   const isEstV = v => !!v && /^\s*est\.?\b/i.test(String(v));
-  // The AOR is a single event, not a process: once its date is on file, IRCC has
-  // acknowledged the application and there is nothing left to process on that
-  // step. So a file sitting at the AOR stage with a real AOR date shows the step
-  // as completed (ticked, plain date, solid bar segment), never "In Progress".
-  const aorReceived = !onHold && !!STG[ci] && STG[ci].key === 'aor' && !!dates.aor && !isEstV(dates.aor);
-  const seg = STG.map((s, i) => `<i class="${(i < ci || ((atTerminal || aorReceived) && i === ci)) ? 'on' : (i === ci ? 'cur' : '')}"></i>`).join('');
-  const pct = atTerminal ? 100 : Math.round(((ci + (aorReceived ? 1 : 0.5)) / STG.length) * 100);
+  // Filing and receipt steps are single events, not processes: once the date is on
+  // file the event has happened and there is nothing left to process on that step.
+  // So a file sitting at one of these stages with a real date on it shows the step
+  // as completed (ticked, plain date, solid bar segment), never "In Progress":
+  // the SINP application filed, the nomination issued, the e-APR or application
+  // submitted to IRCC, and the AOR received. With no date the step is still being
+  // worked on (the e-APR being assembled, for example) and stays "In Progress".
+  const EVENT_STEPS = ['sinp', 'nom', 'eapr', 'submitted', 'aor'];
+  const stageEventDone = !onHold && !!STG[ci] && EVENT_STEPS.includes(STG[ci].key) && !!dates[STG[ci].key] && !isEstV(dates[STG[ci].key]);
+  const seg = STG.map((s, i) => `<i class="${(i < ci || ((atTerminal || stageEventDone) && i === ci)) ? 'on' : (i === ci ? 'cur' : '')}"></i>`).join('');
+  const pct = atTerminal ? 100 : Math.round(((ci + (stageEventDone ? 1 : 0.5)) / STG.length) * 100);
   // --- Forward-projected estimates for not-yet-reached steps -------------------
   // Stored "Est." dates are typed once at intake and go stale: a past month reads
   // as overdue even when the file is on track. Instead, project each pending step
@@ -750,8 +754,8 @@ function appBlock(c, idx, active, ctx = {}) {
     // looking outstanding beside "11 of 11 complete".
     const atDecisionStage = !!STG[ci] && (STG[ci].key === 'decision' || STG[ci].key === 'copr');
     const preArrivalBlankDone = isPR && !onHold && atDecisionStage && s.key === 'prearrival' && !hasRealDate;
-    // AOR received (dated) while the file is still at the AOR stage: done, see above.
-    const receivedDone = aorReceived && i === ci;
+    // A dated filing or receipt step while the file is still at that stage: done, see above.
+    const receivedDone = stageEventDone && i === ci;
     const isDone = preArrivalBlankDone || earlyMedicalDone || receivedDone || ((i < ci || terminalDone) && !datelessOptional);
     const cls = preArrivalBlankDone ? 'done' : (datelessOptional ? 'pending' : (isDone ? 'done' : (i === ci ? 'current' : 'pending')));
     // The current step (medical, final decision, etc.) reads "In Progress" and,
@@ -887,7 +891,8 @@ function appBlock(c, idx, active, ctx = {}) {
     if (STG[ci].key === 'intake') nextFlag = 'Please send your documents';
     // e-APR Submitted in progress: the PR application is being assembled and filed, so
     // the client keeps supplying the additional requirements that complete the file.
-    if (STG[ci].key === 'eapr' && isPrTrack) nextFlag = 'Action Needed: Please continue completing the additional requirements for your PR application.';
+    // Once the e-APR has a real date it is filed, and nothing more is asked of the client.
+    if (STG[ci].key === 'eapr' && isPrTrack && !stageEventDone) nextFlag = 'Action Needed: Please continue completing the additional requirements for your PR application.';
     if (nd.s.key === 'bio' && isPrTrack) {
       nextFlag = 'Action Needed: Please coordinate your availability to our office.';
       nextMeta = (est ? ('Expected around ' + String(est).replace(/^Est\.\s*/i, '') + '. ') : '') + 'Please send us a few dates and times that work for you so we can book your biometrics appointment.';
