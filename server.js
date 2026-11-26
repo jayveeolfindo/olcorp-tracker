@@ -211,6 +211,11 @@ async function emailLink(c, link) {
   const bc = at.isPR ? { fg: '#41762f', bg: '#eef4ec', bd: '#d7e6d0' } : { fg: '#41586e', bg: '#eef1f3', bd: '#dde3e8' };
   const badgeHtml = `<p style="margin:0 0 2px"><span style="display:inline-block;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;letter-spacing:.5px;text-transform:uppercase;font-weight:700;color:${bc.fg};background:${bc.bg};border:1px solid ${bc.bd};border-radius:999px;padding:4px 12px">${esc(badgeLine)}</span></p>`;
   const isCopr = info.key === 'copr';
+  // PR files at Final Decision get a dedicated email: the background check is complete,
+  // COPR admin processing is next, and a heads up on the P1 / P2 virtual landing emails.
+  // Outland spousal files are left on the general email, since they do not land through the PR Portal.
+  const isPrDecision = !isHold && info.key === 'decision' &&
+    ['sinp', 'express', 'spousal-inland'].includes(trackFor(String((c && c.stream) || '')));
   const GR = 'https://www.google.com/maps/place/Olcorp.ca+Immigration+%7C+Olcorp+Technologies/@50.4506077,-104.6125027,17z/data=!3m1!5s0x531bfeef414867a9:0x770e160cdcc5ae69!4m8!3m7!1s0xa6a634affbb34cb7:0x9caf7837261a2a88!8m2!3d50.4506043!4d-104.6099278!9m1!1b1!16s%2Fg%2F11pdht8k81?entry=ttu';
   const FB = 'https://www.facebook.com/olcorp.ca/reviews';
   const PR_STATUS_URL = 'https://www.canada.ca/en/immigration-refugees-citizenship/services/permanent-residents/status.html';
@@ -244,6 +249,49 @@ async function emailLink(c, link) {
     <p><a href="${link}" style="display:inline-block;background:#161616;color:#fff;text-decoration:none;padding:11px 20px;border-radius:999px;font-weight:700">View my application</a></p>
     <p style="color:#5b6b78;font-size:12.5px">${esc(secureNote)}</p>
     <p>Please reply whenever works for you and we'll find a time to connect. I'm here to help, every step of the way.</p>
+    ${SIG_HTML}
+  </div>`;
+  } else if (isPrDecision) {
+    const p1 = 'P1 email: IRCC asks you to confirm that you are in Canada and to confirm your contact details. Most of the time this email comes to our office, and we will contact you as soon as it arrives. Sometimes IRCC sends it directly to the principal applicant instead, so if it reaches you, forward it to me right away.';
+    const p2 = 'P2 email: IRCC gives access to the PR Confirmation Portal, where your landing is confirmed and your PR card photo is submitted. This one always goes to your own email, so please let me know as soon as you receive it and we will complete it together.';
+    const dOpen = 'I have good news on your permanent residence application.';
+    const dHead = 'Your file has now reached the Final Decision stage with IRCC.';
+    const dMeans = 'This means your background check is already complete. What is left is IRCC’s administrative processing for your Confirmation of Permanent Residence (COPR).';
+    const dNext = 'Here is a heads up on what comes next. IRCC will send two emails to confirm your virtual landing, which we call the P1 and P2 emails:';
+    const dWatch = 'Please keep an eye on your inbox and spam folder for both.';
+    const dStay = 'We will stay in control of your application and keep guiding you until your PR card is in your hands. For now, there is nothing you need to do except keep your passport valid and your contact details current.';
+    const dClose = 'You are almost there, and it is a privilege to walk through this with you. If you have any questions at all, just reply to this email.';
+    subject = 'Your permanent residence application has reached the Final Decision stage';
+    text = `Hi ${first},\n\n` +
+      `${badgeTextLine}\n\n` +
+      `${dOpen} ${dHead}\n\n` +
+      `${dMeans}\n\n` +
+      `${dNext}\n\n` +
+      `1. ${p1}\n\n` +
+      `2. ${p2}\n\n` +
+      `${dWatch}\n\n` +
+      `${dStay}\n\n` +
+      `You can follow your full journey any time on your personal tracker:\n${link}\n\n` +
+      `${secureNote}\n\n` +
+      `${dClose}\n\n` +
+      SIG_TEXT;
+    html = `<div style="font-family:-apple-system,Segoe UI,Arial,sans-serif;font-size:14px;color:#0a0a0a;line-height:1.5">
+    <p>Hi ${esc(first)},</p>
+    ${badgeHtml}
+    <p>${esc(dOpen)}</p>
+    <p style="font-size:16.5px;font-weight:700;color:#161616">${esc(dHead)}</p>
+    <p>${esc(dMeans)}</p>
+    <p>${esc(dNext)}</p>
+    <ol style="padding-left:20px;margin:0 0 12px">
+      <li style="margin-bottom:8px">${esc(p1)}</li>
+      <li>${esc(p2)}</li>
+    </ol>
+    <p>${esc(dWatch)}</p>
+    <p>${esc(dStay)}</p>
+    <p>You can follow your full journey any time on your personal tracker:</p>
+    <p><a href="${link}" style="display:inline-block;background:#161616;color:#fff;text-decoration:none;padding:11px 20px;border-radius:999px;font-weight:700">View my application</a></p>
+    <p style="color:#5b6b78;font-size:12.5px">${esc(secureNote)}</p>
+    <p>${esc(dClose)}</p>
     ${SIG_HTML}
   </div>`;
   } else {
